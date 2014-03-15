@@ -1,0 +1,31 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!-- String resource that can be localized -->
+    <system:String x:Key="str_Add">Ajouter</system:String>
+    <system:String x:Key="str_Delete">Supprimer</system:String>
+    <system:String x:Key="str_Check">Scanner</system:String>
+    <system:String x:Key="str_Open">Ouvrir</system:String>
+    <system:String x:Key="str_Edit">Modifier</system:String>
+    <system:String x:Key="str_RegEx">RegEx</system:String>
+    <system:String x:Key="str_Ok">Ok</system:String>
+    <system:String x:Key="str_Cancel">Annuler</system:String>
+    <system:String x:Key="str_URL">URL</system:String>
+    <system:String x:Key="str_Name">Nom</system:String>
+    <system:String x:Key="str_Group">Groupe</system:String>
+    <system:String x:Key="str_Items">Elément(s)</system:String>
+    <system:String x:Key="str_AskDelete">Suppression de {0} ?</system:String>
+    <system:String x:Key="str_AskDeleteMany">Suppression de {0} éléments ?</system:String>
+    <system:String x:Key="str_Confirmation">Confirmation</system:String>
+    <system:String x:Key="str_Value">Valeur</system:String>
+    <system:String x:Key="str_NewName">&lt;nouveau&gt;</system:String>
+    
+    <system:String x:Key="str_Options">Options</system:String>
+    <system:String x:Key="str_LoadAtStartup">Charger au démarrage de Windows</system:String>
+    <system:String x:Key="str_ThreadNb">Nombre de threads</system:String>
+    <system:String x:Key="str_CheckInterval">Interval de scan(Minutes)</system:String>
+    <system:String x:Key="str_Exit">Quitter</system:String>
+    <system:String x:Key="str_ViewAll">Tout</system:String>
+
+</ResourceDictionary>

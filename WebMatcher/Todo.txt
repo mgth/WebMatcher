@@ -1,0 +1,29 @@
+﻿TODO :
+Une page d'options :
+- nombre de threads simultanés
+- le chargement au démarrage
+- Le timing
+
+Limiter le nombre de thread simultanés
+Optimisation automatique du nombre de threads ?
+Visualiser l'avancement pour group dans le titre
+Vérifier l'usage mémoire
+rendre visible les ligne mises à jour lorsque le group est fermé
+Gerer une file d'attente des threads
+Creer un setup
+Recaler la fenetre sur redim barre des taches
+Afficher <nouveau> en bas de liste
+Afficher le resultat regex en temps réel
+
+Fait:
+12/09/2013
+prévoir un ascensseur 
+Gerer des groupes
+
+09/09/2013
+Caler la fenetre en bas à droite.
+Supprimer les boutons standards
+Gerer le clic sur l'icone de notification
+Changer le statut par un icone
+
+*/

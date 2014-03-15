@@ -1,0 +1,33 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!-- String resource that can be localized -->
+    <system:String x:Key="str_Add">Add</system:String>
+    <system:String x:Key="str_Delete">Delete</system:String>
+    <system:String x:Key="str_Check">Check</system:String>
+    <system:String x:Key="str_Open">Open</system:String>
+    <system:String x:Key="str_Edit">Edit</system:String>
+    <system:String x:Key="str_RegEx">RegEx</system:String>
+    <system:String x:Key="str_Ok">Ok</system:String>
+    <system:String x:Key="str_Cancel">Cancel</system:String>
+    <system:String x:Key="str_URL">URL</system:String>
+    <system:String x:Key="str_Name">Name</system:String>
+    <system:String x:Key="str_Group">Group</system:String>
+    <system:String x:Key="str_Items">Item(s)</system:String>
+    <system:String x:Key="str_AskDelete">Delete {0} ?</system:String>
+    <system:String x:Key="str_AskDeleteMany">Delete {0} items ?</system:String>
+    <system:String x:Key="str_Confirmation">Confirmation</system:String>
+    <system:String x:Key="str_Value">Value</system:String>
+    <system:String x:Key="str_NewName">&lt;new&gt;</system:String>
+
+    <system:String x:Key="str_Post">Post</system:String>
+    <system:String x:Key="str_Referer">Referer</system:String>
+
+    <system:String x:Key="str_Options">Options</system:String>
+    <system:String x:Key="str_LoadAtStartup">Load at Windows startup</system:String>
+    <system:String x:Key="str_ThreadNb">Max concurent threads</system:String>
+    <system:String x:Key="str_CheckInterval">Check interval (Minutes)</system:String>
+    <system:String x:Key="str_Exit">Exit</system:String>
+    <system:String x:Key="str_ViewAll">View all</system:String>
+</ResourceDictionary>
