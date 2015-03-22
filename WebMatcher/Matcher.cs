@@ -21,108 +21,47 @@ using System.Security;
 
 namespace WebMatcher
 {
+    public delegate void NotifyHandler(Matcher matcher);
+
     public class Matcher : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
         private void changed(String name)
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
 
-        public static RegistryKey RootKey = Registry.CurrentUser.CreateSubKey("SOFTWARE\\"+Application.CompanyName+"\\"+Application.ProductName);
-        public static NotifyIcon Notify;
-        public static MainWindow Win;
+        //        public static NotifyIcon Notify;
+        //        public static MainWindow Win;
 
-        static ObservableCollection<Matcher> _matchers = new ObservableCollection<Matcher>();
-        static ObservableCollection<String> _groups = new ObservableCollection<String>();
+        //        static ObservableCollection<Matcher> _matchers = new ObservableCollection<Matcher>();
+        //        static ObservableCollection<String> _groups = new ObservableCollection<String>();
 
         // Nb watchers thread to run concurrently
-        public static int MaxNbThreads
+
+
+
+        MatchersGroup _group;
+        public MatchersGroup Group
         {
-            get {
-                int nb;
-                int nb2;
-
-                ThreadPool.GetMaxThreads(out nb, out nb2);
-                return nb;
-            }
-            set { ThreadPool.SetMaxThreads(value,value); RootKey.SetValue("MaxNbThreads", value, RegistryValueKind.DWord); }
-        }
-
-        // Time Span between to watcher check.
-        private static TimeSpan _interval = TimeSpan.FromMinutes(60);
-        public static TimeSpan Interval
-        {
-            get { return _interval; }
-            set { _interval = value; RootKey.SetValue("Interval", (int)value.TotalMinutes, RegistryValueKind.DWord); }
-        }
-        private static Boolean? _loadAtStartup = null;
-
-
-        // Deal with autoloading at windows startup
-        public static Boolean LoadAtStartup
-        {
-            get
-            {
-                if (_loadAtStartup == null)
-                {
-                    RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-                    String startup = rk.GetValue(Application.ProductName, "").ToString();
-                    if (startup == Application.ExecutablePath.ToString())
-                        _loadAtStartup = true;
-                    else
-                        _loadAtStartup = false;
-                }
-                return _loadAtStartup??false;
-            }
-
-//            [PrincipalPermission(SecurityAction.Demand, Role = @"BUILTIN\Administrators")]
+            get { return _group; }
             set
             {
-                try
-                {
-                    _loadAtStartup = value;
-                    {
-                        RegistryKey rk = Registry.CurrentUser.OpenSubKey
-                            ("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-                        if (rk != null)
-                        {
-                            if (value)
-                            {
-                                rk.SetValue(Application.ProductName, Application.ExecutablePath.ToString());
-                            }
-                            else
-                            {
-                                rk.DeleteValue(Application.ProductName, false);
-                            }
-                        }
-                    }
-
-                }
-                catch (SecurityException ex)
-                {
-
-                }
+                if (_group == value) return;
+                if (_group != null) _group.Remove(this);
+                _group = value;
+                _group.Add(this);
+                changed("Group");
+                changed("GroupName");
             }
         }
-        
-
-        public static ObservableCollection<Matcher> Matchers
-        { get { return _matchers; } }
-
-        public ObservableCollection<String> Groups
-        {
-            get { return _groups; }
-            private set { _groups = value; changed("Groups"); }
-        }
-
         String _key;
 
         String _value = "";
         String _status = "";
         String _name = "";
-        String _group = "";
         String _html = "";
-        Boolean _changed = false;
+        Boolean _changedState = false;
         public Boolean Checking = false;
         public Boolean Queued = false;
         public Boolean ForcedCheck = true; // TODO: could be false ?
@@ -137,18 +76,6 @@ namespace WebMatcher
         public String Key
         {
             get { return _key; }
-        }
-        public String Group
-        {
-            get { return _group; }
-
-            set {
-                _group = value;
-                if (value!=null && value!="" && !_groups.Contains(value))
-                    _groups.Add(_group);
-
-                changed("Group");
-            }
         }
         public String URL { get; set; }
         public String Expression { get; set; }
@@ -191,50 +118,47 @@ namespace WebMatcher
             }
         }
         public String Complement { get; set; }
-        public bool GroupExpanded {
-            get {
-                foreach (Matcher m in Matchers) { if (m.Group == Group && (m.IsNew ||  m.Changed)) return true; }
-                return false;
-            }
-        }
 
         // TODO : should be done via event here
-        public static void SetAppIcon()
-        {
-            Icon icn = WebMatcher.Properties.Resources.App;
-            foreach (Matcher m in Matchers) { if (m.Changed) icn = WebMatcher.Properties.Resources.AppOk; }
-            if (Notify.Icon != icn) Notify.Icon = icn;
-        }
+        /*        public static void SetAppIcon()
+                {
+                    Icon icn = WebMatcher.Properties.Resources.App;
+                    foreach (Matcher m in Matchers) { if (m.ChangedState) icn = WebMatcher.Properties.Resources.AppOk; }
+                    if (Notify.Icon != icn) Notify.Icon = icn;
+                }
+                */
 
         public Boolean IsNew
         {
             get { return _key == null; }
         }
 
-        public Boolean Changed
+        public Boolean ChangedState
         {
-            get { return _changed; }
+            get { return _changedState; }
             set
             {
-                if (value != _changed)
+                if (value != _changedState)
                 {
-                    _changed = value;
-                    foreach(Matcher m in Matchers)
-                    {
-                        if (m.Group == Group) m.changed("GroupExpanded");
-                    }
-                    if (Win != null )
-                    {
-                        Win.Dispatcher.BeginInvoke (
-                            new Action(delegate() 
-                              {
-                                  if (AutoRefresh)
-                                  Win.lstMatchers_Refresh();
-                              }
-                           ));
-                    }
-                    SetAppIcon();
-                    if (_changed) LastChanged = LastChecked;
+                    _changedState = value;
+                    /*
+                                        foreach(Matcher m in Matchers)
+                                        {
+                                            if (m.Group == Group) m.changed("GroupExpanded");
+                                        }
+                                       if (Win != null )
+                                        {
+                                            Win.Dispatcher.BeginInvoke (
+                                                new Action(delegate() 
+                                                  {
+                                                      if (AutoRefresh)
+                                                      Win.lstMatchers_Refresh();
+                                                  }
+                                               ));
+                                        }
+                                        SetAppIcon();
+                                        */
+                    if (_changedState) LastChanged = LastChecked;
                     changed("Changed");
                 }
             }
@@ -252,17 +176,32 @@ namespace WebMatcher
             }
         }
 
-
-        public Matcher()
+        public bool TimeToCheck
         {
+            get
+            {
+                if (Checking) return false;
+                if (Queued) return false;
+                if (ForcedCheck) return true;
+                if (LastChecked + Parent.Interval < DateTime.Now) return true;
+
+                return false;
+            }
+        }
+
+
+        public Matcher(Matchers parent)
+        {
+            _parent = parent;
             Name = "<nouveau>";
             URL = "http://";
             Expression = "";
+            GroupName = "";
         }
 
-        public String LoadString(RegistryKey k, String key, String defValue="" )
+        public String LoadString(RegistryKey k, String key, String defValue = "")
         {
-            String s = k.GetValue(key,defValue).ToString();
+            String s = k.GetValue(key, defValue).ToString();
             if (s == "") return null;
             return s;
         }
@@ -280,95 +219,110 @@ namespace WebMatcher
                 }
             }
             else
-            k.SetValue(key, value, RegistryValueKind.String);
+                k.SetValue(key, value, RegistryValueKind.String);
 
+        }
+
+        public string GroupName
+        {
+            get { return Group.Name; }
+            set
+            {
+                Group = Parent.GetGroup(value);
+            }
+        }
+
+        Matchers _parent;
+        public Matchers Parent
+        {
+            get { return _parent; }
         }
 
         public void Load(String key)
         {
             _key = key;
-            RegistryKey k = Matcher.RootKey.OpenSubKey(key);
-            if (k != null)
+            using (RegistryKey rk = Parent.GetRootKey())
             {
-                Name = LoadString(k,"Name");
-                Group = LoadString(k, "Group");
-                URL = LoadString(k, "URL", "http://");
-                Expression = LoadString(k, "Expression");
-                Post = LoadString(k, "Post");
-                Referer = LoadString(k, "Referer");
-
-                Value = LoadString(k, "Value");
-                Status = LoadString(k, "Status", "Ok") ;
-                Changed = (LoadString(k, "Changed", "False") == "True") ? true : false;
-
-                LastChecked = DateTime.ParseExact(LoadString(k, "LastChecked", "01/01/0001"), "dd/MM/yyyy", null);
-                LastChanged = DateTime.ParseExact(LoadString(k, "LastChanged", "01/01/0001"), "dd/MM/yyyy", null);
-                k.Close();
-            }
-        }
-
-        public static void LoadMatchers()
-        {
-            if (RootKey != null)
-            {
-                Interval = TimeSpan.FromMinutes((int)RootKey.GetValue("Interval", 60));
-                MaxNbThreads = (int)RootKey.GetValue("MaxNbThreads", 10);
-
-
-                String[] keys = RootKey.GetSubKeyNames();
-
-                foreach (String s in keys)
+                using (RegistryKey k = rk.OpenSubKey(key))
                 {
-                    Matcher w = new Matcher();
-                    w.Load(s);
-                    Matchers.Add(w);
+                    if (k != null)
+                    {
+                        Name = LoadString(k, "Name");
+                        GroupName = LoadString(k, "Group");
+                        URL = LoadString(k, "URL", "http://");
+                        Expression = LoadString(k, "Expression");
+                        Post = LoadString(k, "Post");
+                        Referer = LoadString(k, "Referer");
+
+                        Value = LoadString(k, "Value");
+                        Status = LoadString(k, "Status", "Ok");
+                        ChangedState = (LoadString(k, "Changed", "False") == "True") ? true : false;
+
+                        LastChecked = DateTime.ParseExact(LoadString(k, "LastChecked", "01/01/0001"), "dd/MM/yyyy", null);
+                        LastChanged = DateTime.ParseExact(LoadString(k, "LastChanged", "01/01/0001"), "dd/MM/yyyy", null);
+                        k.Close();
+                    }
                 }
             }
         }
 
+
         String getNewKey()
         {
-            String[] keys = Matcher.RootKey.GetSubKeyNames();
-            int i = 1;
-            while (Array.IndexOf(keys, i.ToString()) > -1) { i++; }
-            return i.ToString();
+            using (RegistryKey k = Parent.GetRootKey())
+            {
+                String[] keys = k.GetSubKeyNames();
+                int i = 1;
+                while (Array.IndexOf(keys, i.ToString()) > -1) { i++; }
+                return i.ToString();
+            }
         }
 
         public void Save()
         {
             if (_key == null) _key = getNewKey();
 
-            RegistryKey k = RootKey.CreateSubKey(_key);
+            using (RegistryKey rk = Parent.GetRootKey())
+            {
+                using (RegistryKey k = rk.CreateSubKey(_key))
+                {
+                    SaveString(k, "Name", Name);
+                    SaveString(k, "Group", GroupName);
+                    SaveString(k, "URL", URL);
+                    SaveString(k, "Expression", Expression);
+                    SaveString(k, "Post", Post);
+                    SaveString(k, "Referer", Referer);
+                    SaveString(k, "Value", Value == null ? "" : Value);
 
-            SaveString(k, "Name", Name);
-            SaveString(k, "Group",Group);
-            SaveString(k, "URL", URL);
-            SaveString(k, "Expression", Expression);
-            SaveString(k, "Post", Post);
-            SaveString(k, "Referer", Referer);
-            SaveString(k, "Value", Value == null ? "" : Value);
+                    SaveString(k, "Status", Status);
+                    SaveString(k, "Changed", ChangedState ? "True" : "False");
+                    SaveString(k, "LastChecked", LastChecked.ToString("dd/MM/yyyy"));
+                    SaveString(k, "LastChanged", LastChanged.ToString("dd/MM/yyyy"));
 
-            SaveString(k, "Status", Status );
-            SaveString(k, "Changed", Changed ? "True" : "False");
-            SaveString(k, "LastChecked", LastChecked.ToString("dd/MM/yyyy"));
-            SaveString(k, "LastChanged", LastChanged.ToString("dd/MM/yyyy"));
-
-            k.Close();
+                    k.Close();
+                }
+                rk.Close();
+            }
         }
 
         public void delete()
         {
-            if (RootKey != null && _key != null && _key != "")
+            using (RegistryKey k = Parent.GetRootKey())
             {
-                RootKey.DeleteSubKeyTree(_key);
-                _key = null;
+                if (k != null && _key != null && _key != "")
+                {
+                    k.DeleteSubKeyTree(_key);
+                    _key = null;
+                }
+
+                k.Close();
             }
         }
 
 
         public void Open()
         {
-            Changed = false;
+            ChangedState = false;
             System.Diagnostics.Process.Start(URL);
             Save();
         }
@@ -390,27 +344,6 @@ namespace WebMatcher
             }
         }
 
-        public static void CheckMatchers()
-        {
-            Matcher m;
-            int i=0;
-
-                while (true)
-                {
-                    m = Matchers[i];
-                    //while (NbThreads >= MaxNbThreads) { Thread.Sleep(100); }
-                    if (!m.Checking && !m.Queued && (m.LastChecked + Interval < DateTime.Now || m.ForcedCheck))
-                    {
-                        m.Queued = true;
-                        ThreadPool.QueueUserWorkItem(m.Check);
-                    }
-                    //Thread.Sleep(100);
-
-                    i = Matchers.IndexOf(m) + 1;
-                    if (i >= Matchers.Count) { i = 0; Thread.Sleep(1000); }
-
-                }
-        }
 
         String matchIcon(String relName)
         {
@@ -439,28 +372,28 @@ namespace WebMatcher
             if (Html != null)
             {
 
-/*                match = Regex.Match(src, "rel=\"icon\".*?href=\"(.*?)\"", RegexOptions.Singleline);
-                if (!match.Success)
-                {
-                    match = Regex.Match(src, "rel=\"shortcut icon\"[^>]*?href=\"(.*?)\"", RegexOptions.Singleline);
-                }
+                /*                match = Regex.Match(src, "rel=\"icon\".*?href=\"(.*?)\"", RegexOptions.Singleline);
+                                if (!match.Success)
+                                {
+                                    match = Regex.Match(src, "rel=\"shortcut icon\"[^>]*?href=\"(.*?)\"", RegexOptions.Singleline);
+                                }
 
-                if (!match.Success)
-                {
-                    match = Regex.Match(src, "rel=\"favicon\".*?href=\"(.*?)\"", RegexOptions.Singleline);
-                }
+                                if (!match.Success)
+                                {
+                                    match = Regex.Match(src, "rel=\"favicon\".*?href=\"(.*?)\"", RegexOptions.Singleline);
+                                }
 
-                if (!match.Success)
-                {
-                    match = Regex.Match(src, "<link href=\"(.*?)\"[^>]*?rel=\"shortcut icon\"", RegexOptions.Singleline);
-                }
+                                if (!match.Success)
+                                {
+                                    match = Regex.Match(src, "<link href=\"(.*?)\"[^>]*?rel=\"shortcut icon\"", RegexOptions.Singleline);
+                                }
 
-                
-                if (match.Success) url = match.Groups[1].Value;
- * */
+
+                                if (match.Success) url = match.Groups[1].Value;
+                 * */
 
                 url = matchIcon("icon");
-                if (url==null) url = matchIcon("shortcut icon");
+                if (url == null) url = matchIcon("shortcut icon");
                 if (url == null) matchIcon("favicon");
 
                 if (url == null) { url = "/favicon.ico"; }
@@ -474,7 +407,7 @@ namespace WebMatcher
                     {
                         url = match.Groups[1].Value + "/" + url;
                     }
-                } 
+                }
 
                 try
                 {
@@ -504,10 +437,10 @@ namespace WebMatcher
             { }
             if (URL == null)
             {
-                if (Html!=null)
+                if (Html != null)
                 {
                     Html = null;
-                    Changed = true;
+                    ChangedState = true;
                 }
                 Status = "Invalid";
                 Complement = "URL invalide";
@@ -521,15 +454,15 @@ namespace WebMatcher
                 CookieContainer cc = new CookieContainer();
                 if (Referer != null && Referer != "")
                 {
-/*
-                    HttpWebRequest reqReferer1 = (HttpWebRequest)HttpWebRequest.Create("http://www.realtek.com/downloads/downloadsView.aspx?Langid=1&PNid=14&PFid=24&Level=4&Conn=3");
-                    reqReferer1.CookieContainer = cc;
-                    reqReferer1.Method = "GET";
-                    reqReferer1.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
-                    reqReferer1.GetResponse();
-*/
+                    /*
+                                        HttpWebRequest reqReferer1 = (HttpWebRequest)HttpWebRequest.Create("http://www.realtek.com/downloads/downloadsView.aspx?Langid=1&PNid=14&PFid=24&Level=4&Conn=3");
+                                        reqReferer1.CookieContainer = cc;
+                                        reqReferer1.Method = "GET";
+                                        reqReferer1.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
+                                        reqReferer1.GetResponse();
+                    */
                     HttpWebRequest reqReferer = (HttpWebRequest)HttpWebRequest.Create(Referer);
-//                    reqReferer.Referer = reqReferer1.RequestUri.ToString();
+                    //                    reqReferer.Referer = reqReferer1.RequestUri.ToString();
                     reqReferer.CookieContainer = cc;
                     reqReferer.Method = "GET";
                     //reqReferer.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
@@ -537,18 +470,18 @@ namespace WebMatcher
                     HttpWebResponse responseRef = (HttpWebResponse)reqReferer.GetResponse();
                     StreamReader websrcref = new StreamReader(responseRef.GetResponseStream());
                     String srcRef = websrcref.ReadToEnd();
-/*
-                    Match match = Regex.Match(srcRef, "__VIEWSTATE\" value=\"(.*?)\"", RegexOptions.Singleline);
-                    if (match.Success)
-                    {
-                        ViewState = match.Groups[1].ToString();
-                    }*/
+                    /*
+                                        Match match = Regex.Match(srcRef, "__VIEWSTATE\" value=\"(.*?)\"", RegexOptions.Singleline);
+                                        if (match.Success)
+                                        {
+                                            ViewState = match.Groups[1].ToString();
+                                        }*/
                 }
-                
+
                 HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(URL);
                 request.CookieContainer = cc;
 
-                if (Post != "" && Post!=null)
+                if (Post != "" && Post != null)
                 {
                     request.Method = "POST";
                     byte[] array = System.Text.Encoding.UTF8.GetBytes(Post /*+ "&__VIEWSTATE=" + ViewState*/);
@@ -560,10 +493,10 @@ namespace WebMatcher
 
 
                 }
-                else 
+                else
                     request.Method = "GET";
 
-//                request.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
+                //                request.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
                 //request.UserAgent = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:24.0) Gecko/20100101 Firefox/24.0";
                 request.UserAgent = "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)";
                 //SetHeader(request, "User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)");
@@ -578,11 +511,11 @@ namespace WebMatcher
                 request.Headers["Accept-Language"] = "fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3";
                 request.AutomaticDecompression = DecompressionMethods.GZip;
 
-                if (Referer != null && Referer!="")
+                if (Referer != null && Referer != "")
                     request.Referer = Referer;
-/*                else
-                    request.Referer = URL;
-                */
+                /*                else
+                                    request.Referer = URL;
+                                */
 
                 // make request for web page
                 HttpWebResponse response = (HttpWebResponse)request.GetResponse();
@@ -604,13 +537,13 @@ namespace WebMatcher
                     Status = "Unavailable";
                     Complement = ex.ToString();
 
- /*                   StreamReader websrc = new StreamReader(ex.Response.GetResponseStream());
-                    String src = websrc.ReadToEnd();
+                    /*                   StreamReader websrc = new StreamReader(ex.Response.GetResponseStream());
+                                       String src = websrc.ReadToEnd();
 
-                    ex.Response.Close();
+                                       ex.Response.Close();
 
-                    return src;
-                    */
+                                       return src;
+                                       */
                 }
             }
             catch (Exception ex)
@@ -624,10 +557,6 @@ namespace WebMatcher
         public bool GetResult()
         {
             LastChecked = DateTime.Now;
-            if(Name=="OCZ")
-            {
-                string test = "";
-            }
             if (Html != null)
             {
                 try
@@ -644,25 +573,25 @@ namespace WebMatcher
                             if (i > 1) tmpValue += " - ";
                             tmpValue += HttpUtility.HtmlDecode(match.Groups[i].Value.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ")); ;
                         }
-                        if (tmpValue!=Value)
+                        if (tmpValue != Value)
                         {
                             Value = tmpValue;
-                            Changed = true;
+                            ChangedState = true;
                             return true;
                         }
                     }
                     else
                     {
-                        if (Status!="NotFound")
+                        if (Status != "NotFound")
                         {
                             Status = "NotFound";
                             Complement = "Expression non trouvée";
                         }
-                     }
+                    }
                 }
                 catch (System.ArgumentException ex)
                 {
-                    if (Value!=ex.Message)
+                    if (Value != ex.Message)
                     {
                         Value = ex.Message;
                         return true;
@@ -680,14 +609,10 @@ namespace WebMatcher
             Status = "En cours...";
 
             GetHtml();
-             if ( GetResult() )
-             {
-                    if (Key!=null) Save();
-                    if (Notify != null)
-                    {
-                        Notify.ShowBalloonTip(10000, Name, (Value == "") ? "..." : Value, ToolTipIcon.Info);
-                    }
-             }
+            if (GetResult())
+            {
+                if (Key != null) Save();
+            }
 
             if (Favicon == null) GetFavicon();
 
@@ -698,18 +623,18 @@ namespace WebMatcher
         public Matcher Clone()
         {
 
-                Matcher m = new Matcher();
-                m.Name = Name;
-                m.URL = URL;
-                m.Expression = Expression;
-                m.Post = Post;
-                m.Referer = Referer;
+            Matcher m = new Matcher(Parent);
+            m.Name = Name;
+            m.URL = URL;
+            m.Expression = Expression;
+            m.Post = Post;
+            m.Referer = Referer;
+            m.GroupName = GroupName;
 
-                //m._html = m.GetHtml();
+            //m._html = m.GetHtml();
 
-                return m;       
+            return m;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

@@ -8,6 +8,7 @@
     ShowInTaskbar="False" Opacity="1" AllowsTransparency="True" Background="Transparent"
     Topmost="True"
     Closing="ClosingEvent"
+             xmlns:local="clr-namespace:WebMatcher"
     >
 
     <Window.Resources>
@@ -30,7 +31,7 @@
     <StackPanel  x:Name="pnl" Background="Transparent" VerticalAlignment="Bottom">
         <Grid x:Name="grdMatchers" Height="{Binding AutoListHeight}" >
             <!--<ScrollViewer HorizontalScrollBarVisibility="Disabled"  VerticalScrollBarVisibility="Visible">-->
-                    <DataGrid 
+            <DataGrid 
             x:Name="lstMatchers"
             Margin="0,0,0,0" 
             ItemsSource="{Binding Matchers}"
@@ -45,215 +46,30 @@
             HorizontalScrollBarVisibility="Disabled"
                         
             >
-                <DataGrid.GroupStyle>
-                    <GroupStyle>
-                        <GroupStyle.HeaderTemplate>
-                            <DataTemplate>
-                                <StackPanel>
-                                    <TextBlock Foreground="White" Text="{Binding Path=Name}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </GroupStyle.HeaderTemplate>
-                        <GroupStyle.ContainerStyle> 
-                            <Style TargetType="{x:Type GroupItem}">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="{x:Type GroupItem}">
-                                            <Expander IsExpanded="{Binding Items[0].GroupExpanded, Mode=OneWay}">
-                                                <Expander.Header>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Margin ="2" Foreground="White" Text="{Binding Path=Name}" />
-                                                        <TextBlock Margin ="2" Foreground="White" Text="{Binding Path=ItemCount}"/>
-                                                        <TextBlock Margin ="2" Foreground="White" Text="{StaticResource str_Items}"/>
-                                                    </StackPanel>
-                                                </Expander.Header>
-                                                <ItemsPresenter />
-                                            </Expander>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </GroupStyle.ContainerStyle>
-                    </GroupStyle>
-                </DataGrid.GroupStyle>
 
 
-            <DataGrid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="{StaticResource str_Open}" Click="cmdOpen" />
-                                <MenuItem Header="{StaticResource str_Edit}" Click="cmdEdit" />
-                                <MenuItem Header="{StaticResource str_Add}" Click="cmdAdd_Click" />
-                                <MenuItem Header="{StaticResource str_Delete}" Click="cmdDel" />
-                        <MenuItem Header="{StaticResource str_Exit}" Click="cmdExit" />
-                    </ContextMenu>
-                        </DataGrid.ContextMenu>
-
-                        <DataGrid.ColumnHeaderStyle>
-                            <Style TargetType="{x:Type DataGridColumnHeader}">
-                                <Setter Property="Background" Value="black" />
-                                <Setter Property="Foreground" Value="White"/>
-                            </Style>
-                        </DataGrid.ColumnHeaderStyle>
-
-                        <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="SizeToCells" IsReadOnly="True">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Image Height="16">
-                                            <Image.Style>
-                                                <Style TargetType="{x:Type Image}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Status}" Value="Ok">
-                                                            <Setter Property="Source" Value="{StaticResource imgOk}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="En cours...">
-                                                            <Setter Property="Source" Value="{StaticResource imgLoading}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="NotFound">
-                                                            <Setter Property="Source" Value="{StaticResource imgNotFound}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="Unavailable">
-                                                            <Setter Property="Source" Value="{StaticResource imgFailed}"/>
-                                                        </DataTrigger>
-                                                        <!--<DataTrigger Binding="{Binding Changed}" Value="true">
-                                                <Setter Property="Source" Value="{StaticResource imgNew}"/>
-                                            </DataTrigger>-->
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <DataGridTemplateColumn Header="" Width="SizeToCells" IsReadOnly="True">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border Background="#FF606080">
-                                            <Image Height="16" Source="{Binding FaviconSource}" />
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                    <DataGridTextColumn  Width="Auto" Binding="{Binding Name}"/>
-                    <!--<DataGridTextColumn  Width="*" Header="Valeur"  Binding="{Binding Value}"/>-->
-                    <DataGridTemplateColumn Width="Auto">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="" Width="SizeToCells" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Value}" ToolTip="{Binding Value}" TextWrapping="NoWrap" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <!--<DataGridTextColumn  Width="50" Header="Statut" Binding="{Binding Status}"/>-->
-                        </DataGrid.Columns>
-
-                        <DataGrid.RowDetailsTemplate>
                             <DataTemplate>
-                        <StackPanel>
-                            <Grid Margin="8,8,8,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-
-                            <Label Grid.Column="0" Grid.Row="0" Foreground="white"  Content="{StaticResource str_Name}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                            <TextBox Grid.Column="1" Grid.Row="0" x:Name="txtName"  Text="{Binding Name, UpdateSourceTrigger=Explicit}" HorizontalAlignment="Stretch"  TextWrapping="Wrap"  VerticalAlignment="Top" />
-                                
-                            <Label Grid.Column="0" Grid.Row="1" Foreground="white" Content="{StaticResource str_Group}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                            <ComboBox  
-                                Grid.Column="1"
-                                Grid.Row="1"
-                                x:Name="cboGroup"
-                                Text="{Binding Group, UpdateSourceTrigger=Explicit}"
-                                ItemsSource = "{Binding Groups, Mode=OneWay}"
-                                IsEditable="True"
-                                VerticalAlignment="Top"/>
-
-                            <Label Grid.Column="0" Grid.Row="2" Foreground="white" Content="{StaticResource str_URL}" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                            <TextBox Grid.Column="1" Grid.Row="2" x:Name="txtUrl" Text="{Binding URL, UpdateSourceTrigger=Explicit}" TextWrapping="Wrap" VerticalAlignment="Top" TextChanged="txtUrl_TextChanged"/>
-
-                            <Label Grid.Column="0" Grid.Row="3" Foreground="white"  Content="{StaticResource str_RegEx}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                <TextBox Grid.Column="1" Grid.Row="3" x:Name="txtExpr" Text="{Binding Expression, UpdateSourceTrigger=Explicit}"  TextWrapping="Wrap" VerticalAlignment="Top" TextChanged="txtExpr_TextChanged"/>
-                                <Label Grid.Column="0" Grid.Row="4" Foreground="white"  Content="{StaticResource str_Post}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                <TextBox Grid.Column="1" Grid.Row="4" x:Name="txtPost" Text="{Binding Post, UpdateSourceTrigger=Explicit}"  TextWrapping="Wrap" VerticalAlignment="Top"  TextChanged="txtPost_TextChanged"/>
-
-                                <Label Grid.Column="0" Grid.Row="5" Foreground="white"  Content="{StaticResource str_Referer}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                <TextBox Grid.Column="1" Grid.Row="5" x:Name="txtReferer" Text="{Binding Referer, UpdateSourceTrigger=Explicit}"  TextWrapping="Wrap" VerticalAlignment="Top"  TextChanged="txtReferer_TextChanged"/>
-
-                                <Button Grid.Column="0" Grid.Row="6" x:Name="cmdCheck" Content="{StaticResource str_Check}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Click="cmdDetailCheck_Click"/>
-                                <TextBox Grid.Column="1" Grid.Row="6" x:Name="txtCheck" TextWrapping="Wrap" VerticalAlignment="Top"/>
-                            </Grid>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button x:Name="cmdOk" Content="{StaticResource str_Ok}" HorizontalAlignment="right" VerticalAlignment="Top" Width="75" Click="cmdOk_Click" />
-                            <Button x:Name="cmdCancel" Content="{StaticResource str_Cancel}" HorizontalAlignment="right" VerticalAlignment="Top" Width="75" Click="cmdCancel_Click"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                        </DataGrid.RowDetailsTemplate>
-
-                        <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow">
-                                <EventSetter Event="MouseDoubleClick" Handler="lstMatchers_MouseDoubleClick"/>
-                                <Setter Property="Foreground" Value="#FFFFFFFF"/>
-                                <Setter Property="Background" Value="#00000000"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Status}" Value="Unavailable">
-                                        <Setter Property="Background">
-                                            <Setter.Value>
-                                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                    <GradientStop Color="#FFB42828" Offset="0"/>
-                                                    <GradientStop Color="#FF611717" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-
-                                    <DataTrigger Binding="{Binding Changed}" Value="True">
-                                        <Setter Property="Background">
-                                            <Setter.Value>
-                                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                    <GradientStop Color="#FF44871D" Offset="0"/>
-                                                    <GradientStop Color="#FF16440C" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
+                                <local:MatchersGroupUI DataContext="{Binding}"></local:MatchersGroupUI>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
 
 
-                                </Style.Triggers>
 
-                            </Style>
-                        </DataGrid.RowStyle>
-                        <DataGrid.CellStyle>
-                            <Style TargetType="{x:Type DataGridCell}">
-                                <Style.Triggers>
-                                    <Trigger Property="DataGridCell.IsSelected" Value="True">
-                                        <Setter Property="Background" Value="#7FAEB8E8"/>
-                                        <Setter Property="BorderBrush" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="White" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </DataGrid.CellStyle>
-                    </DataGrid>
+            </DataGrid>
             <!--</ScrollViewer>-->
         </Grid>
         <StackPanel x:Name="pnlOptions" HorizontalAlignment="Stretch" Margin="0"  Background="Black" Visibility="Collapsed">
-            <CheckBox Margin="5" VerticalAlignment="Center" IsChecked="{Binding Path=LoadAtStartup, Mode=TwoWay}" >
+            <CheckBox Margin="5" VerticalAlignment="Center" IsChecked="{Binding Path=Matchers.LoadAtStartup, Mode=TwoWay}" >
                 <Label Margin="0,-5" Foreground="white" Content="{StaticResource str_LoadAtStartup}"/>
             </CheckBox>
             <StackPanel Margin="0,5" Orientation="Horizontal" Height="20" >
                 <Label Foreground="white" Margin="0,-5" Content="{StaticResource str_ThreadNb}"/>
-                <TextBox x:Name="txtMaxNbThreads" x:FieldModifier="private" Width="50" Text="{Binding MaxNbThreads}" TextChanged="txtNum_TextChanged" />
+                <TextBox x:Name="txtMaxNbThreads" x:FieldModifier="private" Width="50" Text="{Binding Matchers.MaxNbThreads}" />
                 <StackPanel Orientation="Vertical" VerticalAlignment="Stretch">
                     <Button x:Name="cmdUp_MaxNbThreads" x:FieldModifier="private" Margin="0" Width="10" Height="10" Click="cmdUp_MaxNbThreads_Click" VerticalAlignment="Stretch"/>
                     <Button x:Name="cmdDown_MaxNbThreads" x:FieldModifier="private" Margin="0"  Width="10" Height="10" Click="cmdDown_MaxNbThreads_Click" VerticalAlignment="Stretch"/>
@@ -261,12 +77,12 @@
             </StackPanel>
             <StackPanel Margin="0,5" Orientation="Horizontal" Height="20" >
                 <Label Foreground="white" Margin="0,-5" Content="{StaticResource str_CheckInterval}"/>
-                <TextBox x:Name="txtIntervalHours" x:FieldModifier="private" Width="25" Text="{Binding Path='IntervalHours', Mode='OneWay', StringFormat='{}{0}'}"  TextChanged="txtHours_TextChanged"/>
+                <TextBox x:Name="txtIntervalHours" x:FieldModifier="private" Width="25" Text="{Binding Path='IntervalHours', Mode='OneWay', StringFormat='{}{0}'}" />
                 <StackPanel Orientation="Vertical" VerticalAlignment="Stretch">
                     <Button x:Name="cmdUp_Hours" x:FieldModifier="private" Margin="0" Width="10" Height="10" Click="cmdUp_Hours_Click" VerticalAlignment="Stretch"/>
                     <Button x:Name="cmdDown_Hours" x:FieldModifier="private" Margin="0"  Width="10" Height="10" Click="cmdDown_Hours_Click" VerticalAlignment="Stretch"/>
                 </StackPanel>
-                <TextBox x:Name="txtIntervalMinutes" x:FieldModifier="private" Width="25" Text="{Binding Path='Interval.Minutes', Mode='OneWay', StringFormat='{}{0:D2}'}"  TextChanged="txtMinutes_TextChanged"/>
+                <TextBox x:Name="txtIntervalMinutes" x:FieldModifier="private" Width="25" Text="{Binding Path='Matchers.Interval.Minutes', Mode='OneWay', StringFormat='{}{0:D2}'}" />
                 <StackPanel Orientation="Vertical" VerticalAlignment="Stretch">
                     <Button x:Name="cmdUp_Minutes" x:FieldModifier="private" Margin="0" Width="10" Height="10" Click="cmdUp_Minutes_Click" VerticalAlignment="Stretch"/>
                     <Button x:Name="cmdDown_Minutes" x:FieldModifier="private" Margin="0"  Width="10" Height="10" Click="cmdDown_Minutes_Click" VerticalAlignment="Stretch"/>
@@ -350,13 +166,13 @@
                     </Button.Template>
                 </Button>
                 <Button x:Name="cmdOptions"  Margin="0,0,5,0"  Click="cmdOptions_Click">
-                        <Button.Template>
-                            <ControlTemplate>
-                                <Border HorizontalAlignment="Center" VerticalAlignment="Center" >
-                                    <Image Source="{StaticResource imgOptions}"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
+                    <Button.Template>
+                        <ControlTemplate>
+                            <Border HorizontalAlignment="Center" VerticalAlignment="Center" >
+                                <Image Source="{StaticResource imgOptions}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
                 </Button>
             </StackPanel>
         </StackPanel>

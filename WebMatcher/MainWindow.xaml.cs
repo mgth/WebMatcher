@@ -26,37 +26,18 @@ namespace WebMatcher
    {
        public event PropertyChangedEventHandler PropertyChanged;
 
-       private Matcher tmpMatcher;
-       private String tmpHtml;
         private void changed(String name)
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
         DispatcherTimer _checkerTimer = new DispatcherTimer();
 
-        public ObservableCollection<Matcher> Matchers
-        { get { return Matcher.Matchers; } }
 
-        public int MaxNbThreads
-        {
-            get { return Matcher.MaxNbThreads; }
-            set { Matcher.MaxNbThreads = value; changed("MaxNbThreads"); }
-        }
+        Matchers _matchers = new WebMatcher.Matchers();
+        public Matchers Matchers
+        { get { return _matchers; } }
 
-        public TimeSpan Interval
-        {
-            get { return Matcher.Interval; }
-            set { Matcher.Interval = value; changed("Interval"); changed("IntervalHours");  }
-        }
 
-        public Boolean LoadAtStartup
-        {
-            get { return Matcher.LoadAtStartup; }
-            set {
-                Matcher.LoadAtStartup = value;
-                changed("LoadAtStartup");
-            }
-        }
 
         public double AutoHeight
         {
@@ -86,16 +67,18 @@ namespace WebMatcher
             Top=AutoTop;
             Left = AutoLeft;
         }
+        System.Windows.Forms.NotifyIcon _notify = new System.Windows.Forms.NotifyIcon
+        {
+            Icon = Properties.Resources.App,
+            Visible = true,
+        };
 
         public MainWindow()
         {
             App.SelectCulture(CultureInfo.CurrentCulture.IetfLanguageTag);
             //App.SelectCulture("en-US");
 
-            Matcher.Notify = new System.Windows.Forms.NotifyIcon();
-            Matcher.Notify.Icon = WebMatcher.Properties.Resources.App;
-            Matcher.Notify.Visible = true;
-            Matcher.Notify.Click +=
+            _notify.Click +=
                 delegate(object sender, EventArgs args)
                 {
                     Resize();
@@ -103,76 +86,21 @@ namespace WebMatcher
                     WindowState = WindowState.Normal;
                     Activate();
                 };
-            Matcher.Win = this;
-            Matcher.LoadMatchers();
+            Matchers.LoadMatchers();
 
             InitializeComponent();
             
             lstMatchers.Items.SortDescriptions.Add(new SortDescription("Name",ListSortDirection.Ascending));
 
             lstMatchers.Items.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
-            lstMatchers.Items.Filter = lstMatchers_Filter;
 
             System.Net.ServicePointManager.DefaultConnectionLimit = 1600;
 
 
-            new Thread(Matcher.CheckMatchers).Start();
+            new Thread(Matchers.CheckMatchers).Start();
 
         }
 
-        private bool lstMatchers_Filter(object obj)
-        {
-            Matcher m = (Matcher)obj;
-            return (chkViewAll.IsChecked??false) || m.Changed || m.IsNew;
-        }
-
-        private void cmdOpen(object sender, RoutedEventArgs e)
-        {
-            Matcher w = lstMatchers.SelectedItem as Matcher;
-            if (w != null) w.Open();
-        }
-
-        private void cmdEdit(object sender, RoutedEventArgs e)
-        {
-            //Matcher w = lstMatchers.SelectedItem as Matcher;
-            //if (w != null) w.Edit();
-            DataGridRow row = (DataGridRow)(lstMatchers.ItemContainerGenerator.ContainerFromItem(lstMatchers.SelectedItem));
-            if (row!=null)
-            {
-                 row.DetailsVisibility = Visibility.Visible;
-                 tmpMatcher = (lstMatchers.SelectedItem as Matcher).Clone();
-                 tmpMatcher.AutoRefresh = false;
-                 //tmpMatcher.GetHtml();
-                 //tmpMatcher.GetResult();
-                 //(RowControl("txtCheck") as TextBox).Text = tmpMatcher.Value ;
-
-           }
-        }
-        private void cmdDel(object sender, RoutedEventArgs e)
-        {
-            bool all = false;
-            
-            if (lstMatchers.SelectedItems.Count>1)
-            {
-                MessageBoxResult r = MessageBox.Show(string.Format(FindResource("str_AskDeleteMany").ToString(), lstMatchers.SelectedItems.Count), FindResource("str_Confirmation").ToString(), MessageBoxButton.YesNo);
-                switch (r)
-                {
-                    case MessageBoxResult.Yes: all = true; break;
-                    case MessageBoxResult.No: return;
-                }
-            }
-
-            while(lstMatchers.SelectedItems.Count>0)
-            {
-                Matcher m = lstMatchers.SelectedItem as Matcher;
-                if (all || MessageBox.Show(string.Format(FindResource("str_AskDelete").ToString(), m.Name) ,
-                 FindResource("str_Confirmation").ToString(), MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                {
-                    Matchers.Remove(m);
-                    m.delete();
-                }
-            }
-        }
 
         private void cmdExit(object sender, RoutedEventArgs e)
         {
@@ -181,9 +109,9 @@ namespace WebMatcher
         }
         void ClosingEvent(object sender, CancelEventArgs e)
         {
-            Matcher.Notify.Icon = null;
-            Matcher.Notify.Dispose();
-            Matcher.Notify = null;
+            _notify.Icon = null;
+            _notify.Dispose();
+            _notify = null;
         }
 
         void ResetDataGrid()
@@ -193,11 +121,17 @@ namespace WebMatcher
             lstMatchers.ItemsSource = temp;
         }
 
-
-        private void cmdAdd_Click(object sender, RoutedEventArgs e)
+        void Notify(Matcher m)
         {
-            Matcher m = new Matcher();
-            Matchers.Add(m);
+                if (_notify != null)
+                {
+                    _notify.ShowBalloonTip(10000, m.Name, (m.Value == "") ? "..." : m.Value, System.Windows.Forms.ToolTipIcon.Info);
+                }
+        }
+
+    private void cmdAdd_Click(object sender, RoutedEventArgs e)
+        {
+            Matcher m = new Matcher(Matchers);
             lstMatchers.SelectedItem = m; 
             lstMatchers.UpdateLayout();
             lstMatchers.ScrollIntoView(m);
@@ -248,15 +182,9 @@ namespace WebMatcher
 
         private void cmdCheck_Click(object sender, EventArgs e)
         {
-            foreach (Matcher m in Matchers) m.ForcedCheck = true;
+            Matchers.ForceCheck();
         }
 
-        private void lstMatchers_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            DataGridRow obj = sender as DataGridRow;
-            Matcher w = obj.Item as Matcher;
-            w.Open();
-        }
 
 
         public static childItem FindVisualChild<childItem>(DependencyObject obj) where childItem : DependencyObject
@@ -291,101 +219,8 @@ namespace WebMatcher
 
 
 
-        private void cmdOk_Click(object sender, RoutedEventArgs e)
-        {
 
-            (RowControl("txtName") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
-            (RowControl("cboGroup") as ComboBox).GetBindingExpression(ComboBox.TextProperty).UpdateSource();
-            (RowControl("txtUrl") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
-            (RowControl("txtExpr") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
-            (RowControl("txtPost") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
-            (RowControl("txtReferer") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
 
-            Matcher m = lstMatchers.SelectedItem as Matcher;
-            if (m != null)
-            {
-                m.Save();
-                lstMatchers_Refresh();
-                m.ForcedCheck = true;
-            }
-
-            DataGridRow row = (DataGridRow)(lstMatchers.ItemContainerGenerator.ContainerFromItem(lstMatchers.SelectedItem));
-            if (row != null)
-                row.DetailsVisibility = Visibility.Collapsed;
-
-        }
-
-        private void cmdCancel_Click(object sender, RoutedEventArgs e)
-        {//__EVENTTARGET=btnOk
-            (RowControl("txtName") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateTarget();
-            (RowControl("txtUrl") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateTarget();
-            (RowControl("txtExpr") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateTarget();
-            (RowControl("txtPost") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateTarget();
-            (RowControl("txtReferer") as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateTarget();
-
-            DataGridRow row = (DataGridRow)(lstMatchers.ItemContainerGenerator.ContainerFromItem(lstMatchers.SelectedItem));
-            DataGridDetailsPresenter presenter = FindVisualChild<DataGridDetailsPresenter>(row);
-            if (row != null)
-                row.DetailsVisibility = Visibility.Collapsed;
-
-            Matcher w = lstMatchers.SelectedItem as Matcher;
-            if (w.Key == null) Matchers.Remove(w);
-        }
-
-        private void txtUrl_TextChanged(object sender, RoutedEventArgs e)
-        {
-            if (tmpMatcher != null)
-            {
-                String txt = ((TextBox)sender).Text;
-                Thread t=new Thread(
-                delegate() {
-                    tmpMatcher.URL = txt;
-                    tmpMatcher.GetHtml();
-                    tmpMatcher.GetResult();
-                    String value = tmpMatcher.Value;
-
-                    Application.Current.Dispatcher.BeginInvoke(
-                        DispatcherPriority.Background,
-                        new Action(() => (RowControl("txtCheck") as TextBox).Text = value));
-                });
-                t.Start();
-            }
-        }
-        private void txtExpr_TextChanged(object sender, RoutedEventArgs e)
-        {
-            if (tmpMatcher!=null)
-            {
-                if (tmpMatcher.Html == null)
-                {
-                    txtUrl_TextChanged(sender, e);
-                }
-                else
-                {
-                    tmpMatcher.Expression = ((TextBox)sender).Text;
-                    tmpMatcher.GetResult();
-                    (RowControl("txtCheck") as TextBox).Text = tmpMatcher.Value;
-                }
-            }
-        }
-        private void txtPost_TextChanged(object sender, RoutedEventArgs e)
-        {
-            tmpMatcher.Post = ((TextBox)sender).Text;
-            tmpMatcher.GetHtml();
-            tmpMatcher.GetResult();
-            (RowControl("txtCheck") as TextBox).Text = tmpMatcher.Value;
-        }
-        private void txtReferer_TextChanged(object sender, RoutedEventArgs e)
-        {
-            tmpMatcher.Referer = ((TextBox)sender).Text;
-            tmpMatcher.GetHtml();
-            tmpMatcher.GetResult();
-            (RowControl("txtCheck") as TextBox).Text = tmpMatcher.Value;
-        }
-
-        private void cmdDetailCheck_Click(object sender, RoutedEventArgs e)
-        {
-            Clipboard.SetText(tmpMatcher.Html);
-        }
 
         private void cmdOptions_Click(object sender, RoutedEventArgs e)
         {
@@ -393,46 +228,32 @@ namespace WebMatcher
             else pnlOptions.Visibility = Visibility.Collapsed;
         }
 
-        private void cmdUp_MaxNbThreads_Click(object sender, RoutedEventArgs e) { MaxNbThreads++; }
-        private void cmdDown_MaxNbThreads_Click(object sender, RoutedEventArgs e) { MaxNbThreads--; }
+        private void cmdUp_MaxNbThreads_Click(object sender, RoutedEventArgs e) { Matchers.MaxNbThreads++; }
+        private void cmdDown_MaxNbThreads_Click(object sender, RoutedEventArgs e) { Matchers.MaxNbThreads--; }
 
         private void cmdUp_Hours_Click(object sender, RoutedEventArgs e) {
-            try { Interval += TimeSpan.FromHours(1); }
+            try { Matchers.Interval += TimeSpan.FromHours(1); }
             catch (ArgumentOutOfRangeException ex) { }
         }
         private void cmdDown_Hours_Click(object sender, RoutedEventArgs e) {
-            try { Interval -= TimeSpan.FromHours(1); }
+            try { Matchers.Interval -= TimeSpan.FromHours(1); }
             catch (ArgumentOutOfRangeException ex) { }
         }
 
-        public int IntervalHours { get { return (int)Interval.TotalHours; } }
+        public int IntervalHours { get { return (int)Matchers.Interval.TotalHours; } }
 
         private void cmdUp_Minutes_Click(object sender, RoutedEventArgs e)
         {
-            try { Interval += TimeSpan.FromMinutes(1); }
+            try { Matchers.Interval += TimeSpan.FromMinutes(1); }
             catch (ArgumentOutOfRangeException ex) { }
         }
         private void cmdDown_Minutes_Click(object sender, RoutedEventArgs e)
         {
-            try { Interval -= TimeSpan.FromMinutes(1); }
+            try { Matchers.Interval -= TimeSpan.FromMinutes(1); }
             catch (ArgumentOutOfRangeException ex) { }
 
         }
 
-        private void txtNum_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
-
-        private void txtHours_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
-
-        private void txtMinutes_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
 
 
         public void lstMatchers_Refresh()
