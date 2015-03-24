@@ -30,38 +30,31 @@
 
     <StackPanel  x:Name="pnl" Background="Transparent" VerticalAlignment="Bottom">
         <Grid x:Name="grdMatchers" Height="{Binding AutoListHeight}" >
-            <!--<ScrollViewer HorizontalScrollBarVisibility="Disabled"  VerticalScrollBarVisibility="Visible">-->
-            <DataGrid 
+            <ListBox
             x:Name="lstMatchers"
             Margin="0,0,0,0" 
             ItemsSource="{Binding Matchers}"
-            IsReadOnly="True"
-            AutoGenerateColumns="False"
-            HeadersVisibility="Column"
             Background="#FF202040"
             Foreground="White"
             BorderThickness="0"
-            RowDetailsVisibilityMode="Collapsed"
             VerticalAlignment="Bottom"
-            HorizontalScrollBarVisibility="Disabled"
-                        
+                Width="{Binding AutoWidth}"
+                VirtualizingStackPanel.VirtualizationMode="Standard"
             >
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <local:MatchersGroupUI DataContext="{Binding}"></local:MatchersGroupUI>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
 
-
-                <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="" Width="SizeToCells" IsReadOnly="True">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <local:MatchersGroupUI DataContext="{Binding}"></local:MatchersGroupUI>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-
-
-
-            </DataGrid>
-            <!--</ScrollViewer>-->
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Margin" Value="0"></Setter>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
+                    <Setter Property="Padding" Value="0"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
         </Grid>
         <StackPanel x:Name="pnlOptions" HorizontalAlignment="Stretch" Margin="0"  Background="Black" Visibility="Collapsed">
             <CheckBox Margin="5" VerticalAlignment="Center" IsChecked="{Binding Path=Matchers.LoadAtStartup, Mode=TwoWay}" >

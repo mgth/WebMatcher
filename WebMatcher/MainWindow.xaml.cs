@@ -92,7 +92,7 @@ namespace WebMatcher
             
             lstMatchers.Items.SortDescriptions.Add(new SortDescription("Name",ListSortDirection.Ascending));
 
-            lstMatchers.Items.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
+            //lstMatchers.Items.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
 
             System.Net.ServicePointManager.DefaultConnectionLimit = 1600;
 

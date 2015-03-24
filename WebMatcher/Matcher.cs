@@ -196,7 +196,7 @@ namespace WebMatcher
             Name = "<nouveau>";
             URL = "http://";
             Expression = "";
-            GroupName = "";
+            //GroupName = "";
         }
 
         public String LoadString(RegistryKey k, String key, String defValue = "")

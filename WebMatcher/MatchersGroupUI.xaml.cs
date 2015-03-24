@@ -23,6 +23,16 @@ namespace WebMatcher
         public MatchersGroupUI()
         {
             InitializeComponent();
+
+            ListBox.Visibility = Visibility.Collapsed;
+        }
+
+        private void DockPanel_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (ListBox.Visibility == Visibility.Collapsed)
+                ListBox.Visibility = Visibility.Visible;
+            else
+                ListBox.Visibility = Visibility.Collapsed;
         }
     }
 }

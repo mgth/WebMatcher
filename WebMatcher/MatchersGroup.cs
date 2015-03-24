@@ -36,7 +36,6 @@ namespace WebMatcher
             get { return _parent; }
         }
 
-        bool _expanded = false; 
         private void MatchersGroup_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
         }
@@ -44,17 +43,36 @@ namespace WebMatcher
         protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
             base.OnCollectionChanged(e);
-
-            bool oldExpanded = _expanded;
-            _expanded = Expanded;
-
-            if (oldExpanded != _expanded)
+            CheckChanged("Expanded",ref _expanded);
+            if (CheckChanged("ChangedState", ref _changedState))
             {
-                changed("Expanded");
+                changed("Visibility");
             }
         }
 
+        private bool CheckChanged(string property,ref bool value)
+        {
+            bool old = value;
+            value = (bool)this.GetType().GetProperty(property).GetValue(this);
+            if (old!=value)
+            {
+                changed(property);
+                return true;
+            }
+            return false;
+        }
 
+        public System.Windows.Visibility Visibility
+        {
+            get
+            {
+                if (Expanded) return System.Windows.Visibility.Visible;
+                else return System.Windows.Visibility.Collapsed;
+
+            }
+        }
+
+        bool _expanded = false;
         public bool Expanded
         {
             get
@@ -64,6 +82,15 @@ namespace WebMatcher
             }
         }
 
+        private bool _changedState = false;
+        public bool ChangedState
+        {
+            get
+            {
+                foreach (Matcher m in this) { if (m.ChangedState) return true; }
+                return false;
+            }
+        }
 
 
         protected override void RemoveItem(int index)

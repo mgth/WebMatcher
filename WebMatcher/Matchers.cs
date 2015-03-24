@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace WebMatcher
 {
-    public class Matchers :  ObservableCollection<MatchersGroup>
+    public class Matchers : ObservableCollection<MatchersGroup>
     {
         public event NotifyHandler Notify;
         public void OnNotify(Matcher matcher)
@@ -45,19 +45,23 @@ namespace WebMatcher
         public bool Enabled
         {
             get { return _enabled; }
-            set { _enabled = value; 
+            set
+            {
+                _enabled = value;
                 using (RegistryKey k = GetRootKey())
                 {
-                    k.SetValue("Enabled", value?1 :0, RegistryValueKind.DWord);
+                    k.SetValue("Enabled", value ? 1 : 0, RegistryValueKind.DWord);
                 }
-        }}
+            }
+        }
 
         // Time Span between to watcher check.
         private TimeSpan _interval = TimeSpan.FromMinutes(60);
         public TimeSpan Interval
         {
             get { return _interval; }
-            set {
+            set
+            {
                 _interval = value;
                 using (RegistryKey k = GetRootKey())
                 {
@@ -121,23 +125,23 @@ namespace WebMatcher
         {
             using (RegistryKey k = GetRootKey())
             {
-                    Interval = TimeSpan.FromMinutes((int)k.GetValue("Interval", 60));
-                    MaxNbThreads = (int)k.GetValue("MaxNbThreads", 10);
-                Enabled = (int)k.GetValue("Enabled", 1)==1;
+                Interval = TimeSpan.FromMinutes((int)k.GetValue("Interval", 60));
+                MaxNbThreads = (int)k.GetValue("MaxNbThreads", 10);
+                Enabled = (int)k.GetValue("Enabled", 1) == 1;
 
-                    String[] keys = k.GetSubKeyNames();
+                String[] keys = k.GetSubKeyNames();
 
-                    foreach (String s in keys)
-                    {
-                        Matcher w = new Matcher(this);
-                        w.Load(s);
-                    }
+                foreach (String s in keys)
+                {
+                    Matcher w = new Matcher(this);
+                    w.Load(s);
+                }
 
             }
         }
         public MatchersGroup GetGroup(string name)
         {
-            foreach(MatchersGroup group in this)
+            foreach (MatchersGroup group in this)
             {
                 if (group.Name == name) return group;
             }
@@ -149,18 +153,18 @@ namespace WebMatcher
         {
             MatchersGroup g;
 
-            while(Enabled)
+            while (Enabled)
             {
                 int queued = 0;
                 int i = 0;
-                while (i<Count)
+                while (i < Count)
                 {
                     g = this[i];
                     queued += g.CheckMatchers();
 
                     i = IndexOf(g) + 1;
                 }
-                if(queued==0) Thread.Sleep(1000);
+                if (queued == 0) Thread.Sleep(1000);
             }
         }
         public void ForceCheck()
