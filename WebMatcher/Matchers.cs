@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Security;
 using System.Text;
@@ -10,9 +11,19 @@ using System.Threading.Tasks;
 
 namespace WebMatcher
 {
-    public class Matchers : ObservableCollection<MatchersGroup>
+    public class Matchers : INotifyPropertyChanged
     {
+        private ObservableCollection<MatchersGroup> _groups = new ObservableCollection<MatchersGroup>();
+        public ObservableCollection<MatchersGroup> Groups {  get { return _groups; } }
+
+
         public event NotifyHandler Notify;
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string name)
+        {
+            if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
+        }
+
         public void OnNotify(Matcher matcher)
         {
             if (Notify != null) Notify(matcher);
@@ -38,6 +49,16 @@ namespace WebMatcher
                 {
                     k.SetValue("MaxNbThreads", value, RegistryValueKind.DWord);
                 }
+            }
+        }
+
+        bool _viewAll = true;
+        public bool? ViewAll
+        {
+            get { return _viewAll; }
+            set
+            {
+                if (_viewAll!=value) { _viewAll = value??false; OnPropertyChanged("ViewAll"); }
             }
         }
 
@@ -141,7 +162,7 @@ namespace WebMatcher
         }
         public MatchersGroup GetGroup(string name)
         {
-            foreach (MatchersGroup group in this)
+            foreach (MatchersGroup group in Groups)
             {
                 if (group.Name == name) return group;
             }
@@ -157,19 +178,19 @@ namespace WebMatcher
             {
                 int queued = 0;
                 int i = 0;
-                while (i < Count)
+                while (i < Groups.Count)
                 {
-                    g = this[i];
+                    g = Groups[i];
                     queued += g.CheckMatchers();
 
-                    i = IndexOf(g) + 1;
+                    i = Groups.IndexOf(g) + 1;
                 }
                 if (queued == 0) Thread.Sleep(1000);
             }
         }
         public void ForceCheck()
         {
-            foreach (MatchersGroup group in this) group.ForceCheck();
+            foreach (MatchersGroup group in Groups) group.ForceCheck();
         }
 
 

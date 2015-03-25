@@ -23,16 +23,39 @@ namespace WebMatcher
         public MatchersGroupUI()
         {
             InitializeComponent();
-
-            ListBox.Visibility = Visibility.Collapsed;
         }
 
         private void DockPanel_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (ListBox.Visibility == Visibility.Collapsed)
-                ListBox.Visibility = Visibility.Visible;
+            if (Expander.Visibility == Visibility.Collapsed)
+                Expander.Visibility = Visibility.Visible;
             else
-                ListBox.Visibility = Visibility.Collapsed;
+                Expander.Visibility = Visibility.Collapsed;
+        }
+    }
+    //: 
+    public class BollToVisibilityConverter : System.Windows.Markup.MarkupExtension, IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            bool bValue = (bool)value;
+            if (bValue)
+                return Visibility.Visible;
+            else
+                return Visibility.Collapsed;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            Visibility visibility = (Visibility)value;
+
+            if (visibility == Visibility.Visible)
+                return true;
+            else
+                return false;
+        }
+        public override object ProvideValue(IServiceProvider serviceProvider)
+        {
+            return this;
         }
     }
 }

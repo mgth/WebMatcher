@@ -10,18 +10,46 @@ using System.Threading.Tasks;
 
 namespace WebMatcher
 {
-    public class MatchersGroup :  ObservableCollection<Matcher>
+    public class MatchersGroup : INotifyPropertyChanged
     {
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string name)
+        {
+            if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
+        }
+
+        private ObservableCollection<Matcher> _matchers = new ObservableCollection<Matcher>();
+        public ObservableCollection<Matcher> Matchers { get { return _matchers; } }
 
         public MatchersGroup(Matchers parent,string name)
         {
             _parent = parent;
             _name = name;
-            _parent.Add(this);
+            _parent.Groups.Add(this);
+            _parent.PropertyChanged += _parent_PropertyChanged;
+            _parent.Groups.CollectionChanged += Groups_CollectionChanged;
         }
-        private void changed(String name)
+
+        private void Groups_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            OnPropertyChanged(new PropertyChangedEventArgs(name));
+
+            if (Matchers.Count == 0)
+            {
+                Parent.Groups.Remove(this);
+            }
+            else
+            {
+                CheckChanged("Expanded", ref _expanded);
+                CheckChanged("ChangedState", ref _changedState);
+                CheckChanged("Visible", ref _visible);
+            }
+        }
+
+        private void _parent_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName=="CheckAll")
+                CheckChanged("Visible", ref _visible);
         }
 
         String _name = "";
@@ -40,15 +68,6 @@ namespace WebMatcher
         {
         }
 
-        protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
-        {
-            base.OnCollectionChanged(e);
-            CheckChanged("Expanded",ref _expanded);
-            if (CheckChanged("ChangedState", ref _changedState))
-            {
-                changed("Visibility");
-            }
-        }
 
         private bool CheckChanged(string property,ref bool value)
         {
@@ -56,20 +75,10 @@ namespace WebMatcher
             value = (bool)this.GetType().GetProperty(property).GetValue(this);
             if (old!=value)
             {
-                changed(property);
+                OnPropertyChanged(property);
                 return true;
             }
             return false;
-        }
-
-        public System.Windows.Visibility Visibility
-        {
-            get
-            {
-                if (Expanded) return System.Windows.Visibility.Visible;
-                else return System.Windows.Visibility.Collapsed;
-
-            }
         }
 
         bool _expanded = false;
@@ -77,7 +86,17 @@ namespace WebMatcher
         {
             get
             {
-                foreach (Matcher m in this) { if (m.IsNew || m.ChangedState) return true; }
+                foreach (Matcher m in Matchers) { if (m.IsNew || m.ChangedState) return true; }
+                return false;
+            }
+        }
+
+        bool _visible = false;
+        public bool Visible
+        {
+            get
+            {
+                foreach (Matcher m in Matchers) { if (m.IsNew || m.ChangedState || (Parent.ViewAll??false) ) return true; }
                 return false;
             }
         }
@@ -87,43 +106,34 @@ namespace WebMatcher
         {
             get
             {
-                foreach (Matcher m in this) { if (m.ChangedState) return true; }
+                foreach (Matcher m in Matchers) { if (m.ChangedState) return true; }
                 return false;
             }
         }
 
 
-        protected override void RemoveItem(int index)
-        {
-            base.RemoveItem(index);
-
-            if(Count == 0)
-            {
-                Parent.Remove(this);
-            }
-        }
         public int CheckMatchers()
         {
             Matcher m;
             int i = 0;
             int queued = 0;
 
-            while(i<Count)
+            while(i<Matchers.Count)
             {
-                m = this[i];
+                m = Matchers[i];
                 if (m.TimeToCheck)
                 {
                     m.Queued = true;
                     queued++;
                     ThreadPool.QueueUserWorkItem(m.Check);
                 }
-                i = IndexOf(m) + 1;
+                i = Matchers.IndexOf(m) + 1;
             }
             return queued;
         }
         public void ForceCheck()
         {
-            foreach (Matcher m in this) m.ForcedCheck = true;
+            foreach (Matcher m in Matchers) m.ForcedCheck = true;
         }
     }
 }

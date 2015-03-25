@@ -24,7 +24,6 @@
         <BitmapImage x:Key="imgUnpinned" UriSource="Icons\pin3.png" />
         <BitmapImage x:Key="imgFolded" UriSource="Icons\treeb.png" />
         <BitmapImage x:Key="imgUnfolded" UriSource="Icons\tree.png" />
-
     </Window.Resources>
 
 
@@ -38,20 +37,19 @@
             Foreground="White"
             BorderThickness="0"
             VerticalAlignment="Bottom"
-                Width="{Binding AutoWidth}"
-                VirtualizingStackPanel.VirtualizationMode="Standard"
+            Width="{Binding AutoWidth}"
             >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <local:MatchersGroupUI DataContext="{Binding}"></local:MatchersGroupUI>
+                        <local:MatchersGroupUI DataContext="{Binding Matchers.Groups}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
 
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
-                        <Setter Property="Margin" Value="0"></Setter>
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
-                    <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="0"/>
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>
@@ -113,7 +111,7 @@
                         </ControlTemplate>
                     </CheckBox.Template>
                 </CheckBox>
-                <CheckBox x:Name="chkViewAll" Foreground="White" Margin="0,0,15,0" IsChecked="False" Click="chkViewAll_Click">
+                <CheckBox x:Name="chkViewAll" Foreground="White" Margin="0,0,15,0" IsChecked="{Binding Path=Matchers.ViewAll, Mode=TwoWay}" >
                     <CheckBox.Template>
                         <ControlTemplate TargetType="CheckBox">
                             <Border HorizontalAlignment="Center" VerticalAlignment="Center" >

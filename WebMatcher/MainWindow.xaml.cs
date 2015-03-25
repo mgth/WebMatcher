@@ -26,7 +26,7 @@ namespace WebMatcher
    {
        public event PropertyChangedEventHandler PropertyChanged;
 
-        private void changed(String name)
+        private void OnPropertyChanged(String name)
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
@@ -266,12 +266,7 @@ namespace WebMatcher
             }
         }
 
-        private void chkViewAll_Click(object sender, RoutedEventArgs e)
-        {
-            lstMatchers_Refresh();
-        }
-
         private bool _pinned =false;
-        public bool Pinned { get { return _pinned; } set { _pinned = value; changed("Pinned"); } }
+        public bool Pinned { get { return _pinned; } set { _pinned = value; OnPropertyChanged("Pinned"); } }
     }
 }

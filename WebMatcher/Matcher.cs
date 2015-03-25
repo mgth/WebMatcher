@@ -26,7 +26,7 @@ namespace WebMatcher
     public class Matcher : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        private void changed(String name)
+        private void OnPropertyChanged(String name)
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
@@ -48,11 +48,11 @@ namespace WebMatcher
             set
             {
                 if (_group == value) return;
-                if (_group != null) _group.Remove(this);
+                if (_group != null) _group.Matchers.Remove(this);
                 _group = value;
-                _group.Add(this);
-                changed("Group");
-                changed("GroupName");
+                _group.Matchers.Add(this);
+                OnPropertyChanged("Group");
+                OnPropertyChanged("GroupName");
             }
         }
         String _key;
@@ -71,7 +71,7 @@ namespace WebMatcher
         public String Name
         {
             get { return _name; }
-            set { _name = value; changed("Name"); }
+            set { _name = value; OnPropertyChanged("Name"); }
         }
         public String Key
         {
@@ -84,18 +84,18 @@ namespace WebMatcher
         public String Html
         {
             get { return _html; }
-            set { _html = value; changed("Html"); }
+            set { _html = value; OnPropertyChanged("Html"); }
         }
         public String Value
         {
             get { return _value; }
-            set { _value = value; changed("Value"); }
+            set { _value = value; OnPropertyChanged("Value"); }
         }
 
         public Image Favicon
         {
             get { return _favicon; }
-            set { _favicon = value; changed("FaviconSource"); }
+            set { _favicon = value; OnPropertyChanged("FaviconSource"); }
         }
 
         public System.Windows.Media.ImageSource FaviconSource
@@ -159,7 +159,7 @@ namespace WebMatcher
                                         SetAppIcon();
                                         */
                     if (_changedState) LastChanged = LastChecked;
-                    changed("Changed");
+                    OnPropertyChanged("Changed");
                 }
             }
         }
@@ -172,7 +172,7 @@ namespace WebMatcher
             set
             {
                 _status = value;
-                changed("Status");
+                OnPropertyChanged("Status");
             }
         }
 
