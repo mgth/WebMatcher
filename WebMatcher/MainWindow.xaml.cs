@@ -14,6 +14,7 @@ using System.Windows.Controls.Primitives;
 using System.Globalization;
 using System.Threading;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace WebMatcher
 {
@@ -86,6 +87,11 @@ namespace WebMatcher
                     WindowState = WindowState.Normal;
                     Activate();
                 };
+
+            Matchers.Notify += Matchers_Notify;
+            _notify.BalloonTipClicked += _notify_BalloonTipClicked;
+            _notify.BalloonTipClosed += _notify_BalloonTipClosed;
+
             Matchers.LoadMatchers();
 
             InitializeComponent();
@@ -101,6 +107,24 @@ namespace WebMatcher
 
         }
 
+        private void _notify_BalloonTipClosed(object sender, EventArgs e)
+        {
+            _ballonMatcher = null;
+        }
+
+        private Matcher _ballonMatcher = null;
+        private void Matchers_Notify(Matcher matcher)
+        {
+            _ballonMatcher = matcher;
+            _notify.ShowBalloonTip(30,matcher.Name,matcher.Value,System.Windows.Forms.ToolTipIcon.Info);
+            SetAppIcon();
+        }
+
+        private void _notify_BalloonTipClicked(object sender, EventArgs e)
+        {
+            if (_ballonMatcher!=null)
+                _ballonMatcher.Open();
+        }
 
         private void cmdExit(object sender, RoutedEventArgs e)
         {
@@ -268,5 +292,11 @@ namespace WebMatcher
 
         private bool _pinned =false;
         public bool Pinned { get { return _pinned; } set { _pinned = value; OnPropertyChanged("Pinned"); } }
+
+        public void SetAppIcon()
+        {
+                    Icon icn = (Matchers.ChangedState)?Properties.Resources.AppOk : Properties.Resources.App;
+                    if (_notify.Icon != icn) _notify.Icon = icn;
+        }
     }
 }

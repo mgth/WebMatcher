@@ -32,7 +32,7 @@
             <ListBox
             x:Name="lstMatchers"
             Margin="0,0,0,0" 
-            ItemsSource="{Binding Matchers}"
+            ItemsSource="{Binding Matchers.Groups}"
             Background="#FF202040"
             Foreground="White"
             BorderThickness="0"
@@ -41,7 +41,7 @@
             >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <local:MatchersGroupUI DataContext="{Binding Matchers.Groups}"/>
+                        <local:MatchersGroupUI DataContext="{Binding}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
 

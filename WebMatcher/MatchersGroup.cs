@@ -43,6 +43,7 @@ namespace WebMatcher
                 CheckChanged("Expanded", ref _expanded);
                 CheckChanged("ChangedState", ref _changedState);
                 CheckChanged("Visible", ref _visible);
+                CheckChanged("LabelSize", ref _labelSize);
             }
         }
 
@@ -68,12 +69,52 @@ namespace WebMatcher
         {
         }
 
+        private double _labelSize = 0;
+        public double LabelSize
+        {
+            get
+            {
+                double s = 0;
+                foreach (Matcher m in Matchers)
+                {
+                    if(m.Visible)
+                    {
+                        double ms = m.LabelSize;
+                        if (ms > s) s = ms;
+                    }
+                }
+
+                return s;
+            }
+        }
+
+        public void CheckLabelSizeChanged()
+        {
+            CheckChanged("LabelSize", ref _labelSize);
+        }
+
+        public void OnNotify(Matcher m)
+        {
+            CheckChanged("ChangedState", ref _changedState);
+            _parent.OnNotify(m);
+        }
 
         private bool CheckChanged(string property,ref bool value)
         {
             bool old = value;
             value = (bool)this.GetType().GetProperty(property).GetValue(this);
             if (old!=value)
+            {
+                OnPropertyChanged(property);
+                return true;
+            }
+            return false;
+        }
+        private bool CheckChanged(string property, ref double value)
+        {
+            double old = value;
+            value = (double)this.GetType().GetProperty(property).GetValue(this);
+            if (old != value)
             {
                 OnPropertyChanged(property);
                 return true;
@@ -116,24 +157,28 @@ namespace WebMatcher
         {
             Matcher m;
             int i = 0;
-            int queued = 0;
+            int count = 0;
 
             while(i<Matchers.Count)
             {
                 m = Matchers[i];
                 if (m.TimeToCheck)
                 {
-                    m.Queued = true;
-                    queued++;
-                    ThreadPool.QueueUserWorkItem(m.Check);
+                    if(m.Enqueue())
+                        count++;                 
                 }
                 i = Matchers.IndexOf(m) + 1;
             }
-            return queued;
+            return count;
         }
         public void ForceCheck()
         {
-            foreach (Matcher m in Matchers) m.ForcedCheck = true;
+            foreach (Matcher m in Matchers) m.Enqueue();
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 }

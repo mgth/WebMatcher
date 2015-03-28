@@ -14,7 +14,7 @@ namespace WebMatcher
     public class Matchers : INotifyPropertyChanged
     {
         private ObservableCollection<MatchersGroup> _groups = new ObservableCollection<MatchersGroup>();
-        public ObservableCollection<MatchersGroup> Groups {  get { return _groups; } }
+        public ObservableCollection<MatchersGroup> Groups { get { return _groups; } }
 
 
         public event NotifyHandler Notify;
@@ -26,6 +26,7 @@ namespace WebMatcher
 
         public void OnNotify(Matcher matcher)
         {
+            CheckChanged("ChangedState", ref _changedState);
             if (Notify != null) Notify(matcher);
         }
         public RegistryKey GetRootKey()
@@ -58,7 +59,7 @@ namespace WebMatcher
             get { return _viewAll; }
             set
             {
-                if (_viewAll!=value) { _viewAll = value??false; OnPropertyChanged("ViewAll"); }
+                if (_viewAll != value) { _viewAll = value ?? false; OnPropertyChanged("ViewAll"); }
             }
         }
 
@@ -193,6 +194,44 @@ namespace WebMatcher
             foreach (MatchersGroup group in Groups) group.ForceCheck();
         }
 
+
+        public double LabelSize
+        {
+            get
+            {
+                double s = 0;
+                foreach (MatchersGroup group in Groups)
+                {
+                    if(group.Visible)
+                    {
+                        double gs = group.LabelSize;
+                        if(gs>s) s=gs;
+                    }
+                }
+                return s;
+            }
+        }
+        private bool CheckChanged(string property, ref bool value)
+        {
+            bool old = value;
+            value = (bool)this.GetType().GetProperty(property).GetValue(this);
+            if (old != value)
+            {
+                OnPropertyChanged(property);
+                return true;
+            }
+            return false;
+        }
+
+        private bool _changedState = false;
+        public bool ChangedState
+        {
+            get
+            {
+                foreach (MatchersGroup group in Groups) { if (group.ChangedState) return true; }
+                return false;
+            }
+        }
 
     }
 }
