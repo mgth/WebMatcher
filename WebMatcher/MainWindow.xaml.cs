@@ -82,10 +82,17 @@ namespace WebMatcher
             _notify.Click +=
                 delegate(object sender, EventArgs args)
                 {
-                    Resize();
-                    Show();
-                    WindowState = WindowState.Normal;
-                    Activate();
+                    try
+                    {
+                        Resize();
+                        Show();
+                        WindowState = WindowState.Normal;
+                        Activate();
+                    }
+                    catch (ArgumentException ex)
+                    {
+
+                    }
                 };
 
             Matchers.Notify += Matchers_Notify;
@@ -102,9 +109,8 @@ namespace WebMatcher
 
             System.Net.ServicePointManager.DefaultConnectionLimit = 1600;
 
-
-            new Thread(Matchers.CheckMatchers).Start();
-
+            Matchers.CheckMatchers();
+//            new Thread(Matchers.CheckMatchers).Start();
         }
 
         private void _notify_BalloonTipClosed(object sender, EventArgs e)
@@ -115,8 +121,12 @@ namespace WebMatcher
         private Matcher _ballonMatcher = null;
         private void Matchers_Notify(Matcher matcher)
         {
+            if (matcher.ChangedState)
+            {
             _ballonMatcher = matcher;
             _notify.ShowBalloonTip(30,matcher.Name,matcher.Value,System.Windows.Forms.ToolTipIcon.Info);
+            }
+            else _ballonMatcher = null;
             SetAppIcon();
         }
 

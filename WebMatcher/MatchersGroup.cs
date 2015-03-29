@@ -153,23 +153,32 @@ namespace WebMatcher
         }
 
 
-        public int CheckMatchers()
+        public DateTime CheckMatchers()
         {
             Matcher m;
             int i = 0;
-            int count = 0;
 
-            while(i<Matchers.Count)
+            DateTime minDue = DateTime.MaxValue;
+
+            while (i<Matchers.Count)
             {
                 m = Matchers[i];
-                if (m.TimeToCheck)
+
+                DateTime due = m.LastChecked + Parent.Interval;
+
+                if (due<DateTime.Now)
                 {
-                    if(m.Enqueue())
-                        count++;                 
+                    m.Enqueue();
+                    due = DateTime.Now + Parent.Interval;
+                }
+
+                if (due < minDue)
+                {
+                    minDue = due;
                 }
                 i = Matchers.IndexOf(m) + 1;
             }
-            return count;
+            return minDue;
         }
         public void ForceCheck()
         {

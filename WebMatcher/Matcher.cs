@@ -21,7 +21,7 @@ namespace WebMatcher
         Invalid = 3,
         Unavailable = 4,
         NotFound = 5,
-
+        BadExpression =6,
     }
 
     public class Token
@@ -103,9 +103,29 @@ namespace WebMatcher
             return false;
         }
 
-        private bool setProperty(string name, ref string property, string value)
+        //private bool SetProperty(string name, ref string property, string value)
+        //{
+        //    if (property != value)
+        //    {
+        //        property = value;
+        //        OnPropertyChanged(name);
+        //        return true;
+        //    }
+        //    else return false;
+        //}
+        //private bool SetProperty(string name, ref bool property, bool value)
+        //{
+        //    if (property != value)
+        //    {
+        //        property = value;
+        //        OnPropertyChanged(name);
+        //        return true;
+        //    }
+        //    else return false;
+        //}
+        private bool SetProperty<T>(string name, ref T property, T value) where T : IComparable
         {
-            if (property != value)
+            if (property==null || !property.Equals(value))
             {
                 property = value;
                 OnPropertyChanged(name);
@@ -117,7 +137,7 @@ namespace WebMatcher
         public String Name
         {
             get { return _name; }
-            set { setProperty("Name",ref _name, value); }
+            set { SetProperty("Name",ref _name, value); }
         }
         public String Key
         {
@@ -127,7 +147,7 @@ namespace WebMatcher
         private string _url;
         public string URL { get { return _url; }
             set {
-                if (setProperty("URL", ref _url, value))
+                if (SetProperty("URL", ref _url, value))
                     Enqueue();
             }
         }
@@ -135,7 +155,7 @@ namespace WebMatcher
         private string _expression;
         public string Expression { get { return _expression; }
             set {
-                if (setProperty("Expression", ref _expression, value))
+                if (SetProperty("Expression", ref _expression, value))
                 {
                     if (Html != null)
                     {
@@ -151,7 +171,7 @@ namespace WebMatcher
         private string _post;
         public string Post { get { return _post; }
             set {
-                if (setProperty("Post", ref _post, value))
+                if (SetProperty("Post", ref _post, value))
                 {
                     Enqueue();
                 }
@@ -161,7 +181,7 @@ namespace WebMatcher
         private string _referer;
         public String Referer { get { return _referer; }
             set {
-                if (setProperty("Referrer", ref _referer, value))
+                if (SetProperty("Referrer", ref _referer, value))
                 {
                     Enqueue();
                 }
@@ -171,7 +191,7 @@ namespace WebMatcher
         {
             get { return _html; }
             set {
-                if ( setProperty("Html", ref _html, value))
+                if ( SetProperty("Html", ref _html, value))
                 {
                     Enqueue();
                 }
@@ -182,7 +202,7 @@ namespace WebMatcher
             get { return _value; }
             private set {
                 if (value == null) return;
-                if (setProperty("Value", ref _value, value))
+                if (SetProperty("Value", ref _value, value))
                 {
                     ChangedState = true;
                     LastChanged = DateTime.Now;
@@ -245,7 +265,7 @@ namespace WebMatcher
         private string _complement;
         public String Complement {
             get { return _complement; }
-            private set { setProperty("Complement", ref _complement, value);  }
+            private set { SetProperty("Complement", ref _complement, value);  }
         }
 
 
@@ -270,8 +290,11 @@ namespace WebMatcher
             }
         }
 
-        public DateTime LastChecked { get; set; }
-        public DateTime LastChanged { get; set; }
+        private DateTime _lastCheck = DateTime.MinValue;
+        public DateTime LastChecked { get { return _lastCheck; } set { SetProperty("LastCheck", ref _lastCheck, value); } }
+
+        private DateTime _lastChanged = DateTime.MinValue;
+        public DateTime LastChanged { get { return _lastChanged; } set { SetProperty("LastChanged", ref _lastChanged, value); } }
         public State Status
         {
             get { return _status; }
@@ -285,16 +308,6 @@ namespace WebMatcher
             }
         }
 
-        public bool TimeToCheck
-        {
-            get
-            {
-                if (LastChecked + Parent.Interval < DateTime.Now)
-                    return true;
-                else
-                    return false;
-            }
-        }
 
 
         public Matcher(Matchers parent)
@@ -364,26 +377,25 @@ namespace WebMatcher
                 {
                     if (k != null)
                     {
-                        setProperty("Name",ref _name, LoadString(k, "Name"));
+                        SetProperty("Name",ref _name, LoadString(k, "Name"));
                         GroupName = LoadString(k, "Group");
-                        setProperty("URL", ref _url, LoadString(k, "URL", "http://"));
-                        setProperty("Expression", ref _expression, LoadString(k, "Expression"));
-                        setProperty("Post", ref _post, LoadString(k, "Post"));
-                        setProperty("Referer", ref _referer, LoadString(k, "Referer"));
-
-                        Value = LoadString(k, "Value");
+                        SetProperty("URL", ref _url, LoadString(k, "URL", "http://"));
+                        SetProperty("Expression", ref _expression, LoadString(k, "Expression"));
+                        SetProperty("Post", ref _post, LoadString(k, "Post"));
+                        SetProperty("Referer", ref _referer, LoadString(k, "Referer"));
+                        SetProperty("Value", ref _value, LoadString(k, "Value"));
                         try
                         {
-                            Status = (State)int.Parse(LoadString(k, "Status", "1"));
+                            SetProperty("Status", ref _status, (State)int.Parse(LoadString(k, "Status", "1")));
                         }
                         catch (FormatException ex)
                         {
-                            Status = State.NotChecked;
+                            SetProperty("Status", ref _status, State.NotChecked);
                         }
-                        ChangedState = (LoadString(k, "Changed", "False") == "True") ? true : false;
+                        SetProperty("ChangedState", ref _changedState, (LoadString(k, "Changed", "False") == "True") ? true : false);
 
-                        LastChecked = DateTime.ParseExact(LoadString(k, "LastChecked", "01/01/0001"), "dd/MM/yyyy", null);
-                        LastChanged = DateTime.ParseExact(LoadString(k, "LastChanged", "01/01/0001"), "dd/MM/yyyy", null);
+                        SetProperty("LastCheck", ref _lastCheck, DateTime.ParseExact(LoadString(k, "LastCheck", "01/01/0001"), "dd/MM/yyyy", null));
+                        SetProperty("LastChanged", ref _lastChanged, DateTime.ParseExact(LoadString(k, "LastChanged", "01/01/0001"), "dd/MM/yyyy", null));
                         k.Close();
                     }
                 }
@@ -692,24 +704,33 @@ namespace WebMatcher
             {
                 try
                 {
-                    Match match = Regex.Match(Html, Expression, RegexOptions.Singleline);
-
-                    if (match.Success)
+                    Regex regex = new Regex(Expression, RegexOptions.Singleline, new TimeSpan(0, 0, 0, 1));
+                    try
                     {
-                        String value = "";
-                        status = State.Ok;
-
-                        for (int i = 1; i < match.Groups.Count; i++)
+                        Match match = regex.Match(Html);
+                        if (match.Success)
                         {
-                            if (i > 1) value += " - ";
-                            value += HttpUtility.HtmlDecode(match.Groups[i].Value.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ")); ;
+                            String value = "";
+                            status = State.Ok;
+
+                            for (int i = 1; i < match.Groups.Count; i++)
+                            {
+                                if (i > 1) value += " - ";
+                                value += HttpUtility.HtmlDecode(match.Groups[i].Value.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ")); ;
+                            }
+                            return value;
                         }
-                        return value;
+                        else
+                        {
+                                status = State.NotFound;
+                        }
                     }
-                    else
+                    catch (RegexMatchTimeoutException ex)
                     {
-                            status = State.NotFound;
+                        status = State.Invalid;
+                        return ex.Message;
                     }
+
                 }
                 catch (System.ArgumentException ex)
                 {

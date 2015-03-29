@@ -8,6 +8,7 @@ using System.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace WebMatcher
 {
@@ -16,6 +17,20 @@ namespace WebMatcher
         private ObservableCollection<MatchersGroup> _groups = new ObservableCollection<MatchersGroup>();
         public ObservableCollection<MatchersGroup> Groups { get { return _groups; } }
 
+        DispatcherTimer _timer = new DispatcherTimer();
+
+        public Matchers()
+        {
+//            _timer.Interval = TimeSpan.MaxValue;
+            _timer.Tick += _timer_Tick;
+        }
+
+        DateTime _lastCheck = DateTime.MinValue;
+        private void _timer_Tick(object sender, EventArgs e)
+        {
+            _lastCheck = DateTime.Now;
+            CheckMatchers();
+        }
 
         public event NotifyHandler Notify;
         public event PropertyChangedEventHandler PropertyChanged;
@@ -175,20 +190,47 @@ namespace WebMatcher
         {
             MatchersGroup g;
 
-            while (Enabled)
-            {
-                int queued = 0;
-                int i = 0;
-                while (i < Groups.Count)
-                {
-                    g = Groups[i];
-                    queued += g.CheckMatchers();
+            DateTime minDue = DateTime.MaxValue;
 
-                    i = Groups.IndexOf(g) + 1;
+            int i = 0;
+            while (i < Groups.Count)
+            {
+                g = Groups[i];
+                DateTime due = g.CheckMatchers();
+
+                if (due < minDue) minDue = due;
+
+                i = Groups.IndexOf(g) + 1;
+            }
+
+            Schedule(minDue);
+        }
+
+        public void Schedule(DateTime due)
+        {
+            if (_timer.IsEnabled)
+            {
+                if (due == DateTime.MaxValue)
+                    _timer.Stop();
+                else
+                {
+                    if (_lastCheck + _timer.Interval > due)
+                    {
+                        _timer.Interval = due - _lastCheck;
+                    }
                 }
-                if (queued == 0) Thread.Sleep(1000);
+            }
+            else
+            {
+                if (due < DateTime.MaxValue)
+                {
+                    _lastCheck = DateTime.Now;
+                    _timer.Interval = due - _lastCheck;
+                    _timer.Start();
+                }
             }
         }
+
         public void ForceCheck()
         {
             foreach (MatchersGroup group in Groups) group.ForceCheck();
