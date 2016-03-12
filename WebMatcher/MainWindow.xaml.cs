@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
@@ -9,10 +8,8 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
 using System.Globalization;
-using System.Threading;
 using System.Diagnostics;
 using System.Drawing;
 
@@ -23,56 +20,17 @@ namespace WebMatcher
     /// </summary>
 
 
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : Window
    {
-       public event PropertyChangedEventHandler PropertyChanged;
-
-        private void OnPropertyChanged(String name)
-        {
-            if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
-        }
-        DispatcherTimer _checkerTimer = new DispatcherTimer();
 
 
-        Matchers _matchers = new WebMatcher.Matchers();
-        public Matchers Matchers
-        { get { return _matchers; } }
-
-
-
-        public double AutoHeight
-        {
-            get
-            {
-                return System.Windows.SystemParameters.WorkArea.Height;
-            }
-        }
-
-        public double AutoWidth { get { return 525; } }
-
-        public double AutoTop
-        {
-            get
-            {
-                return System.Windows.SystemParameters.WorkArea.Height - Height;
-            }
-        }
-        public double AutoLeft { get { return System.Windows.SystemParameters.WorkArea.Width - Width; } }
-
-        public double AutoListHeight { get { return System.Windows.SystemParameters.WorkArea.Height - 32; } }
-
-       public void Resize()
-        {
-            Height = AutoHeight;
-            Width = AutoWidth;
-            Top=AutoTop;
-            Left = AutoLeft;
-        }
-        System.Windows.Forms.NotifyIcon _notify = new System.Windows.Forms.NotifyIcon
+        private System.Windows.Forms.NotifyIcon _notify = new System.Windows.Forms.NotifyIcon
         {
             Icon = Properties.Resources.App,
             Visible = true,
         };
+
+        public ViewModel ViewModel = new ViewModel();
 
         public MainWindow()
         {
@@ -84,35 +42,51 @@ namespace WebMatcher
                 {
                     try
                     {
-                        Resize();
                         Show();
                         WindowState = WindowState.Normal;
                         Activate();
                     }
-                    catch (ArgumentException ex)
+                    catch (ArgumentException)
                     {
 
                     }
                 };
 
-            Matchers.Notify += Matchers_Notify;
+            ViewModel.Matchers.Notify += Matchers_Notify;
+
             _notify.BalloonTipClicked += _notify_BalloonTipClicked;
             _notify.BalloonTipClosed += _notify_BalloonTipClosed;
 
-            Matchers.LoadMatchers();
+            ViewModel.Matchers.LoadMatchers();
 
             InitializeComponent();
+
+            DataContext = ViewModel;
             
-            lstMatchers.Items.SortDescriptions.Add(new SortDescription("Name",ListSortDirection.Ascending));
+            LstMatchers.Items.SortDescriptions.Add(new SortDescription("Name",ListSortDirection.Ascending));
 
-            //lstMatchers.Items.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
+            ServicePointManager.DefaultConnectionLimit = 1600;
 
-            System.Net.ServicePointManager.DefaultConnectionLimit = 1600;
+            ViewModel.Matchers.CheckMatchers();
 
-            Matchers.CheckMatchers();
-//            new Thread(Matchers.CheckMatchers).Start();
+            ViewModel.PropertyChanged += ViewModelOnPropertyChanged;
+            SetSize();
         }
 
+        private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
+        {
+            SetSize();
+        }
+
+
+        void SetSize()
+        {
+            Top = ViewModel.AutoTop;
+            Left = ViewModel.AutoLeft;
+            Width = ViewModel.AutoWidth;
+            Height = ViewModel.AutoHeight;
+        }
+ 
         private void _notify_BalloonTipClosed(object sender, EventArgs e)
         {
             _ballonMatcher = null;
@@ -121,7 +95,7 @@ namespace WebMatcher
         private Matcher _ballonMatcher = null;
         private void Matchers_Notify(Matcher matcher)
         {
-            if (matcher.ChangedState)
+            if (matcher.ChangedState && !string.IsNullOrEmpty(matcher.Value))
             {
             _ballonMatcher = matcher;
             _notify.ShowBalloonTip(30,matcher.Name,matcher.Value,System.Windows.Forms.ToolTipIcon.Info);
@@ -132,8 +106,7 @@ namespace WebMatcher
 
         private void _notify_BalloonTipClicked(object sender, EventArgs e)
         {
-            if (_ballonMatcher!=null)
-                _ballonMatcher.Open();
+            _ballonMatcher?.Open();
         }
 
         private void cmdExit(object sender, RoutedEventArgs e)
@@ -143,95 +116,76 @@ namespace WebMatcher
         }
         void ClosingEvent(object sender, CancelEventArgs e)
         {
-            _notify.Icon = null;
-            _notify.Dispose();
-            _notify = null;
+            DisableNotifyIcon();
         }
 
-        void ResetDataGrid()
+        private void Notify(Matcher m)
         {
-            var temp = lstMatchers.ItemsSource;
-            lstMatchers.ItemsSource = null;
-            lstMatchers.ItemsSource = temp;
+            _notify?.ShowBalloonTip(10000, m.Name, (string.IsNullOrEmpty(m.Value)) ? "..." : m.Value, System.Windows.Forms.ToolTipIcon.Info);
         }
 
-        void Notify(Matcher m)
+        private void cmdAdd_Click(object sender, RoutedEventArgs e)
         {
-                if (_notify != null)
-                {
-                    _notify.ShowBalloonTip(10000, m.Name, (m.Value == "") ? "..." : m.Value, System.Windows.Forms.ToolTipIcon.Info);
-                }
-        }
+            Matcher m = new Matcher(ViewModel.Matchers);
+            //LstMatchers.SelectedItem = m.Group; 
+            //
+            //LstMatchers.ScrollIntoView(m.Group);
+            //ListBoxItem itemGroup = (ListBoxItem)(LstMatchers.ItemContainerGenerator.ContainerFromItem(m.Group));
 
-    private void cmdAdd_Click(object sender, RoutedEventArgs e)
-        {
-            Matcher m = new Matcher(Matchers);
-            lstMatchers.SelectedItem = m; 
-            lstMatchers.UpdateLayout();
-            lstMatchers.ScrollIntoView(m);
-            DataGridRow row = (DataGridRow)(lstMatchers.ItemContainerGenerator.ContainerFromItem(m));
-            if (row != null)
+            m.Expanded = true;
+            LstMatchers.UpdateLayout();
+
+
+            m.Name = FindResource("str_NewName").ToString();
+
+
+            if (!Clipboard.ContainsText(TextDataFormat.Text)) return;
+
+            string txt = Clipboard.GetText(TextDataFormat.Text);
+            if (!txt.StartsWith("http")) return;
+            m.Url = new Uri(txt);
+
+            try
             {
-                row.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
-//                lstMatchers.ScrollIntoView(m);
+                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(txt);
+                request.Method = "GET";
+                Matcher.SetHeader(request, "User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)");
 
-                row.DetailsVisibility = Visibility.Visible;
-                lstMatchers.UpdateLayout();
-                lstMatchers.ScrollIntoView(m);
-                (RowControl("txtName", m) as TextBox).Text = FindResource("str_NewName").ToString();
-                if (Clipboard.ContainsText(TextDataFormat.Text))
-                {
-                    String txt = Clipboard.GetText(TextDataFormat.Text);
-                    if (txt.StartsWith("http"))
-                    {
-                        (RowControl("txtUrl",m) as TextBox).Text = txt;
+                // make request for web page
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                StreamReader websrc = new StreamReader(response.GetResponseStream());
+                String src = websrc.ReadToEnd();
+                response.Close();
 
-                        try
-                        {
-                            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(txt);
-                            request.Method = "GET";
-                            Matcher.SetHeader(request, "User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)");
+                Match match = Regex.Match(src, "<meta[^>]*?name=\"description\"[^>]*?content=\"([^\"]*)\"", RegexOptions.Singleline);
+                if (match.Success) m.Name = match.Groups[1].Value;
 
-                            // make request for web page
-                            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                            StreamReader websrc = new StreamReader(response.GetResponseStream());
-                            String src = websrc.ReadToEnd();
-                            response.Close();
-
-                            Match match = Regex.Match(src, "<meta[^>]*?name=\"description\"[^>]*?content=\"([^\"]*)\"", RegexOptions.Singleline);
-                            if (match.Success) (RowControl("txtName",m) as TextBox).Text = match.Groups[1].Value;
-
-                        }
-                        catch (Exception ex)
-                        {
-                        }
-
-                    }
-                }
-
-                TextBox tn = (TextBox)RowControl("txtName",m); if (tn != null) { tn.Focus(); tn.SelectAll(); }
-           }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
 
         private void cmdCheck_Click(object sender, EventArgs e)
         {
-            Matchers.ForceCheck();
+            ViewModel.Matchers.ForceCheck();
         }
 
 
 
-        public static childItem FindVisualChild<childItem>(DependencyObject obj) where childItem : DependencyObject
+        public static TchildItem FindVisualChild<TchildItem>(DependencyObject obj) where TchildItem : DependencyObject
         {
             for (int i = 0; i <= VisualTreeHelper.GetChildrenCount(obj) - 1; i++)
             {
                 DependencyObject child = VisualTreeHelper.GetChild(obj, i);
 
-                if (child != null && child is childItem)
-                    return (childItem)child;
+                if (child != null && child is TchildItem)
+                    return (TchildItem)child;
                 else
                 {
-                    childItem childOfChild = FindVisualChild<childItem>(child);
+                    TchildItem childOfChild = FindVisualChild<TchildItem>(child);
 
                     if (childOfChild != null)
                         return childOfChild;
@@ -243,7 +197,7 @@ namespace WebMatcher
 
         private object RowControl(String Name, Matcher m=null)
         {
-            DataGridRow row = (DataGridRow)(lstMatchers.ItemContainerGenerator.ContainerFromItem(m==null?lstMatchers.SelectedItem:m));
+            DataGridRow row = (DataGridRow)(LstMatchers.ItemContainerGenerator.ContainerFromItem(m==null?LstMatchers.SelectedItem:m));
             DataGridDetailsPresenter presenter = FindVisualChild<DataGridDetailsPresenter>(row);
 
             DataTemplate template = presenter.ContentTemplate;
@@ -262,37 +216,37 @@ namespace WebMatcher
             else pnlOptions.Visibility = Visibility.Collapsed;
         }
 
-        private void cmdUp_MaxNbThreads_Click(object sender, RoutedEventArgs e) { Matchers.MaxNbThreads++; }
-        private void cmdDown_MaxNbThreads_Click(object sender, RoutedEventArgs e) { Matchers.MaxNbThreads--; }
+        private void cmdUp_MaxNbThreads_Click(object sender, RoutedEventArgs e) { ViewModel.Matchers.MaxNbThreads++; }
+        private void cmdDown_MaxNbThreads_Click(object sender, RoutedEventArgs e) { ViewModel.Matchers.MaxNbThreads--; }
 
         private void cmdUp_Hours_Click(object sender, RoutedEventArgs e) {
-            try { Matchers.Interval += TimeSpan.FromHours(1); }
-            catch (ArgumentOutOfRangeException ex) { }
+            try { ViewModel.Matchers.Interval += TimeSpan.FromHours(1); }
+            catch (ArgumentOutOfRangeException) { }
         }
         private void cmdDown_Hours_Click(object sender, RoutedEventArgs e) {
-            try { Matchers.Interval -= TimeSpan.FromHours(1); }
-            catch (ArgumentOutOfRangeException ex) { }
+            try { ViewModel.Matchers.Interval -= TimeSpan.FromHours(1); }
+            catch (ArgumentOutOfRangeException) { }
         }
 
-        public int IntervalHours { get { return (int)Matchers.Interval.TotalHours; } }
+        public int IntervalHours { get { return (int)ViewModel.Matchers.Interval.TotalHours; } }
 
         private void cmdUp_Minutes_Click(object sender, RoutedEventArgs e)
         {
-            try { Matchers.Interval += TimeSpan.FromMinutes(1); }
-            catch (ArgumentOutOfRangeException ex) { }
+            try { ViewModel.Matchers.Interval += TimeSpan.FromMinutes(1); }
+            catch (ArgumentOutOfRangeException) { }
         }
         private void cmdDown_Minutes_Click(object sender, RoutedEventArgs e)
         {
-            try { Matchers.Interval -= TimeSpan.FromMinutes(1); }
-            catch (ArgumentOutOfRangeException ex) { }
+            try { ViewModel.Matchers.Interval -= TimeSpan.FromMinutes(1); }
+            catch (ArgumentOutOfRangeException) { }
 
         }
 
 
 
-        public void lstMatchers_Refresh()
+        public void LstMatchersRefresh()
         {
-            var view = CollectionViewSource.GetDefaultView(Matchers);
+            var view = CollectionViewSource.GetDefaultView(ViewModel.Matchers);
             if (view != null)
             {
                 view.Refresh();
@@ -300,13 +254,31 @@ namespace WebMatcher
             }
         }
 
-        private bool _pinned =false;
-        public bool Pinned { get { return _pinned; } set { _pinned = value; OnPropertyChanged("Pinned"); } }
 
         public void SetAppIcon()
         {
-                    Icon icn = (Matchers.ChangedState)?Properties.Resources.AppOk : Properties.Resources.App;
+                    Icon icn = (ViewModel.Matchers.ChangedState)?Properties.Resources.AppOk : Properties.Resources.App;
                     if (_notify.Icon != icn) _notify.Icon = icn;
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            DisableNotifyIcon();
+        }
+
+        private void Window_Unloaded(object sender, RoutedEventArgs e)
+        {
+            DisableNotifyIcon();
+        }
+
+        private void DisableNotifyIcon()
+        {
+            if ( _notify!=null )
+            {
+                _notify.Icon = null;
+                _notify.Dispose();
+                _notify = null;
+            }
         }
     }
 }

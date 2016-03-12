@@ -8,6 +8,7 @@ xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="str_Check">Scanner</system:String>
     <system:String x:Key="str_Open">Ouvrir</system:String>
     <system:String x:Key="str_Edit">Modifier</system:String>
+    <system:String x:Key="str_RegExModel">Modèle</system:String>
     <system:String x:Key="str_RegEx">RegEx</system:String>
     <system:String x:Key="str_Ok">Ok</system:String>
     <system:String x:Key="str_Cancel">Annuler</system:String>
@@ -27,5 +28,8 @@ xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="str_CheckInterval">Interval de scan(Minutes)</system:String>
     <system:String x:Key="str_Exit">Quitter</system:String>
     <system:String x:Key="str_ViewAll">Tout</system:String>
+    <system:String x:Key="str_ParseDom">Resolution DOM</system:String>
+    <system:String x:Key="str_CopyHtml">Copier le code</system:String>
+    
 
 </ResourceDictionary>

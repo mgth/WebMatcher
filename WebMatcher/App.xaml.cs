@@ -20,11 +20,12 @@ namespace WebMatcher
         {
             MainWindow win = MainWindow as MainWindow;
 
-            if (!win.Pinned)
-            {
-                win.WindowState = WindowState.Minimized;
-                win.Hide();
-            }
+            if (win == null) return;
+
+            if (win.ViewModel.Pinned) return;
+
+            win.WindowState = WindowState.Minimized;
+            win.Hide();
         }
 
         public static void SelectCulture(string culture)

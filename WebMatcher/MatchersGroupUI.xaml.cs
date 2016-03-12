@@ -25,13 +25,16 @@ namespace WebMatcher
             InitializeComponent();
         }
 
+        private MatchersGroup MatchersGroup { get { return DataContext as MatchersGroup; } }
+
         private void DockPanel_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (Expander.Visibility == Visibility.Collapsed)
-                Expander.Visibility = Visibility.Visible;
+            if (MatchersGroup.Expanded)
+                MatchersGroup.Expanded = false;
             else
-                Expander.Visibility = Visibility.Collapsed;
+                MatchersGroup.Expanded = true;
         }
+
     }
     //: 
     public class BollToVisibilityConverter : System.Windows.Markup.MarkupExtension, IValueConverter

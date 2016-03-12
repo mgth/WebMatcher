@@ -4,28 +4,90 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using NotifyChange;
 
 namespace WebMatcher
 {
-    public class Matchers : INotifyPropertyChanged
+    public class Model : Notifier
     {
-        private ObservableCollection<MatchersGroup> _groups = new ObservableCollection<MatchersGroup>();
-        public ObservableCollection<MatchersGroup> Groups { get { return _groups; } }
+        public Matchers Parent { get; }
+        public Model(Matchers parent, string name)
+        {
+            Parent = parent;
+            Name = name;
+            Parent?.Models.Add(this);
 
-        DispatcherTimer _timer = new DispatcherTimer();
+            Watch(Parent, "Parent");
+            Watch(Matchers, "Matchers");
+        }
+        ~Model()
+        {
+            UnWatch(Parent);
+            UnWatch(Matchers);
+
+            Parent?.Models.Remove(this);
+        }
+        public ObservableCollection<Matcher> Matchers { get; } = new ObservableCollection<Matcher>();
+
+        private string _name = "";
+        public string Name
+        {
+            get { return _name; }
+            set { SetProperty(ref _name, value); }
+        }
+
+        private string _expression = "";
+        public string Expression
+        {
+            get { return _expression; }
+            set { SetProperty(ref _expression, value); }
+        }
+
+        private int _count = 0;
+        public int Count
+        {
+            get { return _count; }
+            private set { SetProperty(ref _count, value); }
+        }
+
+
+        [DependsOn("Matchers")]
+        public void UpdateCount()
+        {
+            Count = Matchers.Count;
+            if (Count == 0) Parent?.Models.Remove(this);
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
+
+    public class Matchers : Notifier
+    {
+        public ObservableCollection<MatchersGroup> Groups { get; } = new ObservableCollection<MatchersGroup>();
+        public ObservableCollection<Model> Models { get; } = new ObservableCollection<Model>();
+
+        private readonly DispatcherTimer _timer = new DispatcherTimer();
 
         public Matchers()
         {
-//            _timer.Interval = TimeSpan.MaxValue;
             _timer.Tick += _timer_Tick;
+            Watch(Groups, "Groups");
+            Watch(Groups, "Models");
         }
 
         DateTime _lastCheck = DateTime.MinValue;
+
         private void _timer_Tick(object sender, EventArgs e)
         {
             _lastCheck = DateTime.Now;
@@ -33,21 +95,19 @@ namespace WebMatcher
         }
 
         public event NotifyHandler Notify;
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged(string name)
-        {
-            if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
-        }
 
         public void OnNotify(Matcher matcher)
         {
-            CheckChanged("ChangedState", ref _changedState);
-            if (Notify != null) Notify(matcher);
+            Notify?.Invoke(matcher);
         }
-        public RegistryKey GetRootKey()
+
+        public static RegistryKey GetRootKey()
         {
-            return Registry.CurrentUser.CreateSubKey("SOFTWARE\\" + System.Windows.Forms.Application.CompanyName + "\\" + System.Windows.Forms.Application.ProductName);
+            return
+                Registry.CurrentUser.CreateSubKey("SOFTWARE\\" + System.Windows.Forms.Application.CompanyName + "\\" +
+                                                  System.Windows.Forms.Application.ProductName);
         }
+
         public int MaxNbThreads
         {
             get
@@ -69,45 +129,50 @@ namespace WebMatcher
         }
 
         bool _viewAll = true;
+
         public bool? ViewAll
         {
             get { return _viewAll; }
-            set
-            {
-                if (_viewAll != value) { _viewAll = value ?? false; OnPropertyChanged("ViewAll"); }
-            }
+            set { SetProperty(ref _viewAll, value ?? false); }
         }
 
         bool _enabled = true;
+
         public bool Enabled
         {
             get { return _enabled; }
             set
             {
-                _enabled = value;
-                using (RegistryKey k = GetRootKey())
+                if (SetProperty(ref _enabled, value))
                 {
-                    k.SetValue("Enabled", value ? 1 : 0, RegistryValueKind.DWord);
+                    using (RegistryKey k = GetRootKey())
+                    {
+                        k.SetValue("Enabled", value ? 1 : 0, RegistryValueKind.DWord);
+                    }
                 }
             }
         }
 
         // Time Span between to watcher check.
         private TimeSpan _interval = TimeSpan.FromMinutes(60);
+
         public TimeSpan Interval
         {
             get { return _interval; }
             set
             {
-                _interval = value;
-                using (RegistryKey k = GetRootKey())
+                if (SetProperty(ref _interval, value))
                 {
-                    k.SetValue("Interval", (int)value.TotalMinutes, RegistryValueKind.DWord);
+                    using (RegistryKey k = GetRootKey())
+                    {
+                        k.SetValue("Interval", (int)value.TotalMinutes, RegistryValueKind.DWord);
+                    }
                 }
             }
         }
 
         private static Boolean? _loadAtStartup = null;
+
         public Boolean LoadAtStartup
         {
             get
@@ -115,7 +180,9 @@ namespace WebMatcher
                 if (_loadAtStartup == null)
                 {
                     String startup = "";
-                    using (RegistryKey k = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+                    using (
+                        RegistryKey k =
+                            Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
                     {
                         startup = k.GetValue(System.Windows.Forms.Application.ProductName, "").ToString();
                     }
@@ -132,7 +199,7 @@ namespace WebMatcher
             {
                 try
                 {
-                    _loadAtStartup = value;
+                    SetProperty(ref _loadAtStartup, value);
                     {
                         using (RegistryKey k = Registry.CurrentUser.OpenSubKey
                             ("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
@@ -141,7 +208,8 @@ namespace WebMatcher
                             {
                                 if (value)
                                 {
-                                    k.SetValue(System.Windows.Forms.Application.ProductName, System.Windows.Forms.Application.ExecutablePath.ToString());
+                                    k.SetValue(System.Windows.Forms.Application.ProductName,
+                                        System.Windows.Forms.Application.ExecutablePath.ToString());
                                 }
                                 else
                                 {
@@ -150,14 +218,14 @@ namespace WebMatcher
                             }
                         }
                     }
-
                 }
-                catch (SecurityException ex)
+                catch (SecurityException)
                 {
 
                 }
             }
         }
+
         public void LoadMatchers()
         {
             using (RegistryKey k = GetRootKey())
@@ -170,20 +238,18 @@ namespace WebMatcher
 
                 foreach (String s in keys)
                 {
-                    Matcher w = new Matcher(this);
-                    w.Load(s);
+                    new Matcher(this, s);
                 }
-
             }
         }
-        public MatchersGroup GetGroup(string name)
-        {
-            foreach (MatchersGroup group in Groups)
-            {
-                if (group.Name == name) return group;
-            }
 
-            return new MatchersGroup(this, name);
+        public MatchersGroup GetGroup(string name)
+            => Groups.FirstOrDefault(g => g.Name == name) ?? new MatchersGroup(this, name);
+
+        public Model GetModel(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            return Models.FirstOrDefault(m => m.Name == name) ?? new Model(this, name);
         }
 
         public void CheckMatchers()
@@ -237,43 +303,45 @@ namespace WebMatcher
         }
 
 
-        public double LabelSize
-        {
-            get
-            {
-                double s = 0;
-                foreach (MatchersGroup group in Groups)
-                {
-                    if(group.Visible)
-                    {
-                        double gs = group.LabelSize;
-                        if(gs>s) s=gs;
-                    }
-                }
-                return s;
-            }
-        }
-        private bool CheckChanged(string property, ref bool value)
-        {
-            bool old = value;
-            value = (bool)this.GetType().GetProperty(property).GetValue(this);
-            if (old != value)
-            {
-                OnPropertyChanged(property);
-                return true;
-            }
-            return false;
-        }
 
         private bool _changedState = false;
+        private int _count = 0;
+        private int _checkedCount = 0;
+
         public bool ChangedState
         {
-            get
-            {
-                foreach (MatchersGroup group in Groups) { if (group.ChangedState) return true; }
-                return false;
-            }
+            get { return _changedState; }
+            set { SetProperty(ref _changedState, value); }
         }
 
+        [DependsOn("Groups", "Groups.ChangedState")]
+        public void UpdateChangedState()
+        {
+            ChangedState = Groups.Any(g => g.ChangedState);
+        }
+
+        public int Count
+        {
+            get { return _count; }
+            private set { SetProperty(ref _count,value); }
+        }
+
+        [DependsOn("Groups", "Groups.Matchers")]
+        public void UpdateCount(string s)
+        {
+            Count = Groups.Sum(g => g.Count);
+        }
+
+        public int CheckedCount
+        {
+            get { return _checkedCount; }
+            private set { SetProperty(ref _checkedCount,value); }
+        }
+
+        [DependsOn("Groups", "Groups.CheckedCount")]
+        public void UpdateCheckedCount()
+        {
+            CheckedCount = Groups.Sum(g => g.CheckedCount);
+        }
     }
 }

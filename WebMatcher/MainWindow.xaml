@@ -2,54 +2,70 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Themes="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero2" x:Class="WebMatcher.MainWindow"
-    DataContext="{Binding RelativeSource={RelativeSource Self}}"
     Title="Web Watcher" Height="{Binding AutoHeight}"  Width="{Binding AutoWidth}" Top="{Binding AutoTop}" Left="{Binding AutoLeft}"
+    MaxWidth="{Binding AutoWidth}"
     WindowStyle="None"
     ShowInTaskbar="False" Opacity="1" AllowsTransparency="True" Background="Transparent"
     Topmost="True"
     Closing="ClosingEvent"
-             xmlns:local="clr-namespace:WebMatcher"
+             xmlns:local="clr-namespace:WebMatcher" Closed="Window_Closed" Unloaded="Window_Unloaded"
     >
 
+    <!--<Window.DataContext><local:ViewModel/></Window.DataContext>-->
+    
     <Window.Resources>
-        <BitmapImage x:Key="imgOk" UriSource="Icons\ok.png" />
-        <BitmapImage x:Key="imgLoading" UriSource="Icons\loading.png" />
-        <BitmapImage x:Key="imgNew" UriSource="Icons\new.png" />
-        <BitmapImage x:Key="imgFailed" UriSource="Icons\failed.png" />
-        <BitmapImage x:Key="imgNotFound" UriSource="Icons\notfound.png" />
-        <BitmapImage x:Key="imgWatch" UriSource="Icons\watch3.png" />
-        <BitmapImage x:Key="imgOptions" UriSource="Icons\options1.png" />
-        <BitmapImage x:Key="imgAdd" UriSource="Icons\add2.png" />
-        <BitmapImage x:Key="imgPinned" UriSource="Icons\pin2.png" />
-        <BitmapImage x:Key="imgUnpinned" UriSource="Icons\pin3.png" />
-        <BitmapImage x:Key="imgFolded" UriSource="Icons\treeb.png" />
-        <BitmapImage x:Key="imgUnfolded" UriSource="Icons\tree.png" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Icons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+
     </Window.Resources>
 
 
     <StackPanel  x:Name="pnl" Background="Transparent" VerticalAlignment="Bottom">
-        <Grid x:Name="grdMatchers" Height="{Binding AutoListHeight}" >
+        <Grid x:Name="GrdMatchers" Height="{Binding AutoListHeight}" >
             <ListBox
-            x:Name="lstMatchers"
+            x:Name="LstMatchers"
             Margin="0,0,0,0" 
             ItemsSource="{Binding Matchers.Groups}"
             Background="#FF202040"
-            Foreground="White"
             BorderThickness="0"
             VerticalAlignment="Bottom"
-            Width="{Binding AutoWidth}"
+            MaxWidth="{Binding AutoWidth}"
+            Foreground="White"
+                
+            ScrollViewer.CanContentScroll = "false"
+                
             >
                 <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <local:MatchersGroupUI DataContext="{Binding}"/>
+                    <DataTemplate>                
+                        <local:MatchersGroupUI Visibility="{Binding Path=Visible, Converter={local:BollToVisibilityConverter}}" DataContext="{Binding}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
+                
+                <ListBox.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="BorderBrush" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                    </Style>
+                    <Style TargetType="ListBoxItem">
+                        <Style.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="Transparent"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black"/>
+                        </Style.Resources>
+                    </Style>
+                </ListBox.Resources>
 
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Margin" Value="0"/>
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="Padding" Value="0"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>
@@ -81,11 +97,31 @@
             </StackPanel>
         </StackPanel>
         <StackPanel x:Name="pnlCommands" HorizontalAlignment="Stretch" Margin="0" Background="Black">
+
+            <ProgressBar
+                    Width="Auto" 
+                    Height="1"
+                    Background="Black"
+                    BorderThickness="0"
+                    Maximum="{Binding Matchers.Count,Mode=OneWay}"   
+                    Value="{Binding Matchers.CheckedCount,Mode=OneWay}" 
+                >
+                <ProgressBar.Foreground>
+                    <LinearGradientBrush EndPoint="1,1" StartPoint="0,1">
+                        <GradientStop Color="#FF06370F" Offset="0"/>
+                        <GradientStop Color="#FF229437" Offset="1"/>
+                    </LinearGradientBrush>
+
+                </ProgressBar.Foreground>
+            </ProgressBar>
+
+
             <StackPanel
                 Margin="8"
                 Orientation="Horizontal"
                 HorizontalAlignment="Right" 
                 >
+
                 <CheckBox x:Name="cmdPin"  Margin="0,0,5,0" IsChecked="{Binding Pinned}">
                     <CheckBox.Template>
                         <ControlTemplate TargetType="CheckBox">

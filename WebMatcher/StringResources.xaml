@@ -8,6 +8,7 @@ xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="str_Check">Check</system:String>
     <system:String x:Key="str_Open">Open</system:String>
     <system:String x:Key="str_Edit">Edit</system:String>
+    <system:String x:Key="str_RegExModel">Model</system:String>
     <system:String x:Key="str_RegEx">RegEx</system:String>
     <system:String x:Key="str_Ok">Ok</system:String>
     <system:String x:Key="str_Cancel">Cancel</system:String>
@@ -30,4 +31,6 @@ xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="str_CheckInterval">Check interval (Minutes)</system:String>
     <system:String x:Key="str_Exit">Exit</system:String>
     <system:String x:Key="str_ViewAll">View all</system:String>
+    <system:String x:Key="str_ParseDom">Parse DOM</system:String>
+    <system:String x:Key="str_CopyHtml">Copy code</system:String>
 </ResourceDictionary>
