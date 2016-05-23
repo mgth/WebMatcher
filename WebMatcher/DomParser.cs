@@ -42,13 +42,15 @@ namespace WebMatcher
                              Application.Run(this);
                          }));
             thrd.SetApartmentState(ApartmentState.STA);
+
             thrd.Start();
         }
 
         private void TimerTask(object stateObj)
         {
             _timer.Dispose();
-            _browser.Dispose();
+            //_browser.Dispose();
+            this.ExitThread();
             Parsed?.Invoke(this, "");
         }
 
@@ -78,8 +80,15 @@ namespace WebMatcher
                 return;
             }
 
-            System.Runtime.InteropServices.Marshal.Release(_browser.Handle);
-            _browser.Dispose();
+            try
+            {
+                System.Runtime.InteropServices.Marshal.Release(_browser.Handle);
+                _browser.Dispose();
+                
+            }
+            catch(ObjectDisposedException)
+            { }
+
             base.Dispose(disposing);
         }
 

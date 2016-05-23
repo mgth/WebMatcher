@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Stretch="Uniform">
+  <Canvas Name="svg2" Width="135.79329" Height="141.22467">
+    <Canvas.Resources>
+      <LinearGradientBrush xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Key="linearGradient3195" MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="1,1">
+        <LinearGradientBrush.GradientStops>
+          <GradientStopCollection>
+            <GradientStop Color="#FFFFFF" Offset="0"/>
+            <GradientStop Color="#00FFFFFF" Offset="1"/>
+          </GradientStopCollection>
+        </LinearGradientBrush.GradientStops>
+      </LinearGradientBrush>
+      <LinearGradientBrush xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Key="linearGradient2209" MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="1,1">
+        <LinearGradientBrush.GradientStops>
+          <GradientStopCollection>
+            <GradientStop Color="#FFFF0000" Offset="0"/>
+            <GradientStop Color="#00FF2A2A" Offset="1"/>
+          </GradientStopCollection>
+        </LinearGradientBrush.GradientStops>
+      </LinearGradientBrush>
+      <RadialGradientBrush xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Key="radialGradient2136" MappingMode="Absolute" Center="192,192" GradientOrigin="192,192" RadiusX="109.16138" RadiusY="109.16138">
+        <RadialGradientBrush.GradientStops>
+          <GradientStopCollection>
+            <GradientStop Color="#FFFF0000" Offset="0"/>
+            <GradientStop Color="#00FF2A2A" Offset="1"/>
+          </GradientStopCollection>
+        </RadialGradientBrush.GradientStops>
+        <RadialGradientBrush.Transform>
+          <MatrixTransform Matrix="-0.106586 1.75168 -1.205874 -0.07337587 459.558 -121.7057"/>
+        </RadialGradientBrush.Transform>
+      </RadialGradientBrush>
+      <LinearGradientBrush xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Key="linearGradient2138" MappingMode="Absolute" StartPoint="355,231" EndPoint="325,594">
+        <LinearGradientBrush.GradientStops>
+          <GradientStopCollection>
+            <GradientStop Color="#FFFFFF" Offset="0"/>
+            <GradientStop Color="#00FFFFFF" Offset="1"/>
+          </GradientStopCollection>
+        </LinearGradientBrush.GradientStops>
+        <LinearGradientBrush.Transform>
+          <MatrixTransform Matrix="0.552861 0 0 0.552861 -8.67935 -52.47802"/>
+        </LinearGradientBrush.Transform>
+      </LinearGradientBrush>
+    </Canvas.Resources>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <Canvas Name="g2194">
+      <Canvas.RenderTransform>
+        <MatrixTransform Matrix="0.498201 0 0 0.498201 -28.840306 -22.040581"/>
+      </Canvas.RenderTransform>
+      <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path12034" Fill="#FF000000" StrokeThickness="1.10572135" Stroke="#FF000000" StrokeMiterLimit="4" StrokeLineJoin="Miter" StrokeStartLineCap="Flat" StrokeEndLineCap="Flat">
+        <Path.Data>
+          <PathGeometry Figures="M 211.87412 59.029478 C 201.84357 44.613469 177.76354 39.968444 169.95321 50.604752 128.96824 106.41914 60.495535 265.98339 64.371436 266.41405 c -2.887383 8.32481 -9.384019 26.03365 -3.609232 36.52402 18.580634 21.20942 33.440947 28.97803 61.148246 21.36525 L 313.93238 274.82848 C 332.08574 268.06949 333.089 247.24107 325.25404 234.59832 295.43047 186.47404 248.10821 111.10549 211.87412 59.029478 Z" FillRule="evenodd"/>
+        </Path.Data>
+      </Path>
+      <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path12040" Fill="{StaticResource radialGradient2136}" StrokeThickness="0.80139303" StrokeMiterLimit="4" StrokeLineJoin="Miter" StrokeStartLineCap="Flat" StrokeEndLineCap="Flat">
+        <Path.Data>
+          <PathGeometry Figures="m 193.87727 80.318816 c -37.30896 67.265894 -64.0516 134.531794 -92.47156 201.797694 -2.601975 5.20385 -3.265486 13.81361 -0.78758 17.27053 2.4779 3.45694 11.54257 4.18549 19.73836 2.45012 l 181.81544 -43.46878 c 6.22218 -1.49969 12.56942 -3.58276 14.07271 -7.17873 1.50329 -3.59603 -2.22017 -9.59816 -5.05294 -14.39721 -30.84224 -50.13328 -62.52077 -101.10287 -98.8811 -156.754239 -3.05561 -4.844819 -6.73618 -7.809344 -9.97854 -7.656241 -3.23886 0.152933 -6.31709 3.717425 -8.45479 7.936856 z" FillRule="evenodd"/>
+        </Path.Data>
+      </Path>
+      <Canvas Name="g3209">
+        <Canvas.RenderTransform>
+          <TranslateTransform X="-2" Y="-2"/>
+        </Canvas.RenderTransform>
+        <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path3205" Fill="#FF800000" StrokeThickness="1.10572135" StrokeMiterLimit="4" StrokeLineJoin="Miter" StrokeStartLineCap="Flat" StrokeEndLineCap="Flat">
+          <Path.Data>
+            <PathGeometry Figures="m 220.84356 118.51054 c -8.09641 2.99125 -18.85192 4.20975 -32.53087 3.4793 9.03576 31.26042 14.01557 65.31224 15.68731 96.57266 6.97552 0.94062 13.01042 1e-5 18.125 -2.78125 2.30568 -31.25836 3.83336 -64.17415 -1.28144 -97.27071 z" FillRule="evenodd"/>
+          </Path.Data>
+        </Path>
+        <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path3207" Fill="#FF800000" StrokeThickness="1.10572135" StrokeMiterLimit="4" StrokeLineJoin="Miter" StrokeStartLineCap="Flat" StrokeEndLineCap="Flat">
+          <Path.Data>
+            <PathGeometry Figures="m 216.89269 229.92935 c -7.01691 -1.12696 -13.77196 4.32662 -15.06377 12.15362 -1.29714 7.82613 3.35117 15.08461 10.36808 16.21156 7.01692 1.12694 13.73934 -4.30534 15.03117 -12.13232 1.29713 -7.82613 -3.31857 -15.10592 -10.33548 -16.23286 z" FillRule="evenodd"/>
+          </Path.Data>
+        </Path>
+      </Canvas>
+      <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path3203" Fill="#FFFFFFFF" StrokeThickness="1.10572135" StrokeMiterLimit="4" StrokeLineJoin="Miter" StrokeStartLineCap="Flat" StrokeEndLineCap="Flat">
+        <Path.Data>
+          <PathGeometry Figures="m 222.84356 120.51054 c -8.09641 2.99125 -18.85192 4.20975 -32.53087 3.4793 9.03576 31.26042 14.01557 65.31224 15.68731 96.57266 6.97552 0.94062 13.01042 1e-5 18.125 -2.78125 2.30568 -31.25836 3.83336 -64.17415 -1.28144 -97.27071 z" FillRule="evenodd"/>
+        </Path.Data>
+      </Path>
+      <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path12050" Fill="#FFFFFFFF" StrokeThickness="1.10572135" StrokeMiterLimit="4" StrokeLineJoin="Miter" StrokeStartLineCap="Flat" StrokeEndLineCap="Flat">
+        <Path.Data>
+          <PathGeometry Figures="m 218.89269 231.92935 c -7.01691 -1.12696 -13.77196 4.32662 -15.06377 12.15362 -1.29714 7.82613 3.35117 15.08461 10.36808 16.21156 7.01692 1.12694 13.73934 -4.30534 15.03117 -12.13232 1.29713 -7.82613 -3.31857 -15.10592 -10.33548 -16.23286 z" FillRule="evenodd"/>
+        </Path.Data>
+      </Path>
+      <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path12054" Fill="{StaticResource linearGradient2138}" StrokeThickness="0.66274643" StrokeMiterLimit="4" StrokeLineJoin="Miter" StrokeStartLineCap="Flat" StrokeEndLineCap="Flat">
+        <Path.Data>
+          <PathGeometry Figures="M 197.13814 92.614828 C 165.23669 154.509 139.46152 216.40317 112.92475 278.29734 c -2.15182 4.30358 -5.50786 11.16856 -3.45865 14.02741 2.0492 2.85884 3.93096 2.18535 10.70883 0.75018 l 57.29146 -14.42215 c -7.21144 -53.26022 -3.87924 -130.96136 55.43912 -152.59504 L 212.38238 92.382768 c -2.52698 -4.006642 -5.57078 -6.458277 -8.25219 -6.331659 -2.67851 0.12647 -5.2242 3.07428 -6.99205 6.563719 z" FillRule="evenodd"/>
+        </Path.Data>
+      </Path>
+    </Canvas>
+  </Canvas>
+</Viewbox>

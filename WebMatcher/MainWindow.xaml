@@ -40,7 +40,7 @@
             >
                 <ListBox.ItemTemplate>
                     <DataTemplate>                
-                        <local:MatchersGroupUI Visibility="{Binding Path=Visible, Converter={local:BollToVisibilityConverter}}" DataContext="{Binding}"/>
+                        <local:MatchersGroupView Visibility="{Binding Path=Visible, Converter={local:BollToVisibilityConverter}}" DataContext="{Binding}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
                 

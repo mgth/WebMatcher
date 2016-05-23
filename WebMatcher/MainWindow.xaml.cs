@@ -24,7 +24,7 @@ namespace WebMatcher
    {
 
 
-        private System.Windows.Forms.NotifyIcon _notify = new System.Windows.Forms.NotifyIcon
+        private System.Windows.Forms.NotifyIcon _notifyIcon = new System.Windows.Forms.NotifyIcon
         {
             Icon = Properties.Resources.App,
             Visible = true,
@@ -37,7 +37,7 @@ namespace WebMatcher
             App.SelectCulture(CultureInfo.CurrentCulture.IetfLanguageTag);
             //App.SelectCulture("en-US");
 
-            _notify.Click +=
+            _notifyIcon.Click +=
                 delegate(object sender, EventArgs args)
                 {
                     try
@@ -52,10 +52,10 @@ namespace WebMatcher
                     }
                 };
 
-            ViewModel.Matchers.Notify += Matchers_Notify;
+            ViewModel.Matchers.TrayNotification += Matchers_Notify;
 
-            _notify.BalloonTipClicked += _notify_BalloonTipClicked;
-            _notify.BalloonTipClosed += _notify_BalloonTipClosed;
+            _notifyIcon.BalloonTipClicked += NotifyIconBalloonTipClicked;
+            _notifyIcon.BalloonTipClosed += NotifyIconBalloonTipClosed;
 
             ViewModel.Matchers.LoadMatchers();
 
@@ -87,7 +87,7 @@ namespace WebMatcher
             Height = ViewModel.AutoHeight;
         }
  
-        private void _notify_BalloonTipClosed(object sender, EventArgs e)
+        private void NotifyIconBalloonTipClosed(object sender, EventArgs e)
         {
             _ballonMatcher = null;
         }
@@ -98,13 +98,13 @@ namespace WebMatcher
             if (matcher.ChangedState && !string.IsNullOrEmpty(matcher.Value))
             {
             _ballonMatcher = matcher;
-            _notify.ShowBalloonTip(30,matcher.Name,matcher.Value,System.Windows.Forms.ToolTipIcon.Info);
+            _notifyIcon.ShowBalloonTip(30,matcher.Name,matcher.Value,System.Windows.Forms.ToolTipIcon.Info);
             }
             else _ballonMatcher = null;
-            SetAppIcon();
+            SetAppIcon(matcher.Parent);
         }
 
-        private void _notify_BalloonTipClicked(object sender, EventArgs e)
+        private void NotifyIconBalloonTipClicked(object sender, EventArgs e)
         {
             _ballonMatcher?.Open();
         }
@@ -119,10 +119,10 @@ namespace WebMatcher
             DisableNotifyIcon();
         }
 
-        private void Notify(Matcher m)
-        {
-            _notify?.ShowBalloonTip(10000, m.Name, (string.IsNullOrEmpty(m.Value)) ? "..." : m.Value, System.Windows.Forms.ToolTipIcon.Info);
-        }
+        //private void Notify(Matcher m)
+        //{
+        //    _notifyIcon?.ShowBalloonTip(10000, m.Name, (string.IsNullOrEmpty(m.Value)) ? "..." : m.Value, System.Windows.Forms.ToolTipIcon.Info);
+        //}
 
         private void cmdAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -175,35 +175,35 @@ namespace WebMatcher
 
 
 
-        public static TchildItem FindVisualChild<TchildItem>(DependencyObject obj) where TchildItem : DependencyObject
-        {
-            for (int i = 0; i <= VisualTreeHelper.GetChildrenCount(obj) - 1; i++)
-            {
-                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+        //public static TchildItem FindVisualChild<TchildItem>(DependencyObject obj) where TchildItem : DependencyObject
+        //{
+        //    for (int i = 0; i <= VisualTreeHelper.GetChildrenCount(obj) - 1; i++)
+        //    {
+        //        DependencyObject child = VisualTreeHelper.GetChild(obj, i);
 
-                if (child != null && child is TchildItem)
-                    return (TchildItem)child;
-                else
-                {
-                    TchildItem childOfChild = FindVisualChild<TchildItem>(child);
+        //        if (child != null && child is TchildItem)
+        //            return (TchildItem)child;
+        //        else
+        //        {
+        //            TchildItem childOfChild = FindVisualChild<TchildItem>(child);
 
-                    if (childOfChild != null)
-                        return childOfChild;
-                }
-            }
+        //            if (childOfChild != null)
+        //                return childOfChild;
+        //        }
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
-        private object RowControl(String Name, Matcher m=null)
-        {
-            DataGridRow row = (DataGridRow)(LstMatchers.ItemContainerGenerator.ContainerFromItem(m==null?LstMatchers.SelectedItem:m));
-            DataGridDetailsPresenter presenter = FindVisualChild<DataGridDetailsPresenter>(row);
+        //private object RowControl(String Name, Matcher m=null)
+        //{
+        //    DataGridRow row = (DataGridRow)(LstMatchers.ItemContainerGenerator.ContainerFromItem(m==null?LstMatchers.SelectedItem:m));
+        //    DataGridDetailsPresenter presenter = FindVisualChild<DataGridDetailsPresenter>(row);
 
-            DataTemplate template = presenter.ContentTemplate;
+        //    DataTemplate template = presenter.ContentTemplate;
 
-            return template.FindName(Name, presenter);
-        }
+        //    return template.FindName(Name, presenter);
+        //}
 
 
 
@@ -228,7 +228,7 @@ namespace WebMatcher
             catch (ArgumentOutOfRangeException) { }
         }
 
-        public int IntervalHours { get { return (int)ViewModel.Matchers.Interval.TotalHours; } }
+        public int IntervalHours => (int)ViewModel.Matchers.Interval.TotalHours;
 
         private void cmdUp_Minutes_Click(object sender, RoutedEventArgs e)
         {
@@ -244,21 +244,18 @@ namespace WebMatcher
 
 
 
-        public void LstMatchersRefresh()
-        {
-            var view = CollectionViewSource.GetDefaultView(ViewModel.Matchers);
-            if (view != null)
-            {
-                view.Refresh();
-                // TODO : add something to expand where changed
-            }
-        }
+        //public void LstMatchersRefresh()
+        //{
+        //    var view = CollectionViewSource.GetDefaultView(ViewModel.Matchers);
+        //    view?.Refresh();
+        //    // TODO : add something to expand where changed
+        //}
 
 
-        public void SetAppIcon()
+        public void SetAppIcon(Matchers matchers)
         {
-                    Icon icn = (ViewModel.Matchers.ChangedState)?Properties.Resources.AppOk : Properties.Resources.App;
-                    if (_notify.Icon != icn) _notify.Icon = icn;
+                var icn = (matchers.ChangedState)?Properties.Resources.AppOk : Properties.Resources.App;
+                if (_notifyIcon.Icon != icn) _notifyIcon.Icon = icn;
         }
 
         private void Window_Closed(object sender, EventArgs e)
@@ -273,12 +270,11 @@ namespace WebMatcher
 
         private void DisableNotifyIcon()
         {
-            if ( _notify!=null )
-            {
-                _notify.Icon = null;
-                _notify.Dispose();
-                _notify = null;
-            }
+            if (_notifyIcon == null) return;
+
+            _notifyIcon.Icon = null;
+            _notifyIcon.Dispose();
+            _notifyIcon = null;
         }
     }
 }

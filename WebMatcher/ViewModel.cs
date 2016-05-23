@@ -33,8 +33,7 @@ namespace WebMatcher
         [DependsOn("WorkArea")]
         public  double AutoListHeight => SystemParameters.WorkArea.Height - 32;
 
-        private bool _pinned = false;
-        public bool Pinned { get { return _pinned; } set { SetProperty(ref _pinned, value); } }
+        public bool Pinned { get { return GetProperty<bool>(); } set { SetProperty(value); } }
 
         public void SetSize()
         {

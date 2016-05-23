@@ -26,7 +26,7 @@ xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="str_Referer">Referer</system:String>
 
     <system:String x:Key="str_Options">Options</system:String>
-    <system:String x:Key="str_LoadAtStartup">Load at Windows startup</system:String>
+    <system:String x:Key="str_LoadAtStartup">LoadProperty at Windows startup</system:String>
     <system:String x:Key="str_ThreadNb">Max concurent threads</system:String>
     <system:String x:Key="str_CheckInterval">Check interval (Minutes)</system:String>
     <system:String x:Key="str_Exit">Exit</system:String>

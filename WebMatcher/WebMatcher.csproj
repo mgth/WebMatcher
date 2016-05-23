@@ -126,11 +126,11 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="MatchersGroupUI.xaml">
+    <Page Include="MatchersGroupView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="MatcherUI.xaml">
+    <Page Include="MatcherView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -146,11 +146,11 @@
   <ItemGroup>
     <Compile Include="Matchers.cs" />
     <Compile Include="MatchersGroup.cs" />
-    <Compile Include="MatchersGroupUI.xaml.cs">
-      <DependentUpon>MatchersGroupUI.xaml</DependentUpon>
+    <Compile Include="MatchersGroupView.xaml.cs">
+      <DependentUpon>MatchersGroupView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MatcherUI.xaml.cs">
-      <DependentUpon>MatcherUI.xaml</DependentUpon>
+    <Compile Include="MatcherView.xaml.cs">
+      <DependentUpon>MatcherView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>

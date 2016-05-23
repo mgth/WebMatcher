@@ -51,232 +51,227 @@ namespace WebMatcher
 
     public delegate void NotifyHandler(Matcher matcher);
 
-    public class Matcher : Notifier
+    public class Matcher : RegistryNotifier
     {
-        MatchersGroup _group;
         public MatchersGroup Group
         {
-            get { return _group; }
+            get { return GetProperty<MatchersGroup>(); }
             set
             {
-                var oldGroup = _group;
+                var oldGroup = Group;
 
-                if (!SetAndWatch(ref _group, value)) return;
+                if (!SetAndWatch(value)) return;
 
                 oldGroup?.Matchers.Remove(this);
-                _group?.Matchers.Add(this);
+                Group?.Matchers.Add(this);
+
+                GroupName = Group?.Name;
             }
         }
 
-        private Model _model = null;
         public Model Model
         {
-            get { return _model; }
-            set
-            {
-                var oldModel = _model;
-
-                if(!SetAndWatch(ref _model, value)) return;
-
-                oldModel?.Matchers.Remove(this);
-                _model?.Matchers.Add(this);
-            }
+            get { return GetProperty<Model>(); }
+            set { SetAndWatch(value); }
         }
 
-        string _value = null;
-        string _oldValue = null;
-        State _status = State.NotChecked;
-        string _name = "";
-        string _html = "";
-        bool _changedState = false;
+        [DependsOn(nameof(Model))]
+        void UpdateModel()
+        {
+            //oldModel?.Matchers.Remove(this);
+            Model?.Matchers.Add(this);
+
+            ModelName = Model?.Name;
+        }
+
+
         public Token Checking = new Token();
         public Token Queued = new Token();
         public bool AutoRefresh = true;
-        Image _favicon;
 
 
         public bool IsRunning
         {
-            get { return _isRunning; }
-            set { SetProperty(ref _isRunning, value); }
+            get { return GetProperty<bool>(); }
+            set { SetProperty(value); }
         }
 
         public bool Enqueue()
         {
-            if (!Queued.GetToken()) return false;
-            return ThreadPool.QueueUserWorkItem(Check);
+            return Queued.GetToken() && ThreadPool.QueueUserWorkItem(Check);
         }
 
         public string Name
         {
-            get { return _name; }
-            set { SetProperty(ref _name, value); }
+            get { return GetOrLoad<string>(); }
+            set { SetAndSaveLater(value); }
         }
 
-        public string Key
-        {
-            get { return _key; }
-            private set { SetProperty(ref _key, value); }
-        }
-
-        private Uri _url;
         public Uri Url
         {
-            get { return _url; }
+            get { return GetProperty<Uri>(); }
             set
             {
-                if (value?.AbsoluteUri != _url?.AbsoluteUri) _url = null;
-                if (SetProperty(ref _url, value))
-                {
-                    Enqueue();
-                }
+                //if (value?.AbsoluteUri != Url?.AbsoluteUri) value = null;
+                SetProperty(value);
             }
         }
 
-        [DependsOn("Url")]
+        [DependsOn(nameof(Url))]
+        private void UpdateUrl()
+        {
+            Enqueue();
+            StringUrl = Url?.AbsoluteUri;
+        }
+
         public string StringUrl
         {
-            get
-            {
-                return _url.AbsoluteUri;
-            }
-            set
-            {
-                try
-                {
-                    Uri newUri = new Uri(value);
-                    if (newUri.AbsoluteUri  != _url?.AbsoluteUri )
-                    {
-                        Url = newUri;
-                    }
-                }
-                catch (UriFormatException)
-                {
+            get { return GetProperty<string>(); }
+            set { SetAndSaveLater(value);   }
+        }
 
+        [DependsOn(nameof(StringUrl))]
+        void UpdateStringUrl()
+        {
+            try
+            {
+                if (StringUrl == null)
+                {
+                    Url = null;
+                    return;
                 }
+
+                Uri newUri = new Uri(StringUrl);
+
+                if (newUri.AbsoluteUri != Url?.AbsoluteUri)
+                {
+                    Url = newUri;
+                }
+            }
+            catch (UriFormatException)
+            {
+
             }
         }
 
-        private string _expression;
         public string Expression
         {
-            get { return _expression; }
+            get { return GetOrLoad<string>(); }
             set
             {
-                if (Model==null) 
-                    SetProperty(ref _expression, value);
+                if (Model == null)
+                    SetAndSaveLater(value);
                 else
                     Model.Expression = value;
             }
         }
 
-        [DependsOn("Expression")]
+        [DependsOn(nameof(Expression))]
         public void UpdateHtml()
         {
-                if (Html != null)
-                {
-                    Value = Result(_expression);
-                }
-                else Enqueue();           
+            if (Html != null)
+            {
+                Value = Result(Expression);
+            }
+            else Enqueue();
         }
 
         [DependsOn("Model", "Model.Expression")]
         public void UpdateExpression()
         {
             if (Model != null)
-                SetProperty(ref _expression, Model.Expression, "Expression");
+                SetProperty(Model.Expression, "Expression");
         }
 
 
-        private string _post;
         public string Post
         {
-            get { return _post; }
+            get { return GetOrLoad<string>(); }
             set
             {
-                if (SetProperty(ref _post, value))
+                if (SetAndSaveLater(value))
                 {
                     Enqueue();
                 }
             }
         }
 
-        private string _referer;
         public string Referer
         {
-            get { return _referer; }
+            get { return GetOrLoad<string>(); }
             set
             {
-                if (SetProperty(ref _referer, value))
+                if (SetAndSaveLater(value))
                 {
                     Enqueue();
                 }
             }
         }
 
-        private bool _parseDom = false;
         public bool ParseDom
         {
-            get { return _parseDom; }
+            get { return GetOrLoad<bool>(); }
             set
             {
-                if (SetProperty(ref _parseDom, value))
+                if (!SetAndSaveLater(value)) return;
+
+                if (Html != null)
                 {
-                    if (Html != null)
-                    {
-                        Value = Result(Expression);
-                    }
-                    else Enqueue();
+                    Value = Result(Expression);
                 }
+                else Enqueue();
             }
         }
 
         public string Html
         {
-            get { return _html; }
+            get { return GetProperty<string>(); }
             set
             {
-                if (SetProperty(ref _html, value))
+                if (!SetProperty(value)) return;
+
+                if (Html != null)
                 {
-                    if (Html != null)
-                    {
-                        Value = Result(Expression);
-                    }
+                    Value = Result(Expression);
                 }
             }
         }
 
-        private string _parsedHtml = "";
         public string ParsedHtml
         {
-            get { return _parsedHtml; }
-            set { SetProperty(ref _parsedHtml, value); }
+            get { return GetProperty<string>(); }
+            set { SetProperty(value); }
         }
 
-        public String Value
+        public string OldValue
         {
-            get { return _value; }
+            get { return GetOrLoad<string>(); }
+            set { SetAndSave(value); }
+        }
+
+        public string Value
+        {
+            get { return GetOrLoad<string>(); }
             private set
             {
                 if (value == null) return;
 
                 //Some sites can go backward and forward we dont want notification for that.
-                bool setChangedState = (_value != null) && (value != _oldValue);
-                _oldValue = _value;
+                bool setChangedState = (Value != null) && (value != OldValue);
+                OldValue = Value;
 
-                if (SetProperty(ref _value, value))
-                {
-                    SaveString("Value", Value ?? "");
-                    LastChanged = DateTime.Now;
-                    if (setChangedState) ChangedState = true;
-                }
+                if (!SetProperty(value)) return;
+
+                SaveString("Value", Value ?? "");
+                LastChanged = DateTime.Now;
+                if (setChangedState) ChangedState = true;
             }
         }
 
         public Image Favicon
         {
-            get { return _favicon; }
-            private set { SetProperty(ref _favicon, value); }
+            get { return GetProperty<Image>(); }
+            private set { SetProperty(value); }
         }
 
 
@@ -285,14 +280,14 @@ namespace WebMatcher
         {
             get
             {
-                if (_favicon == null) { return null; }
+                if (Favicon == null) { return null; }
 
                 // Winforms Image we want to get the WPF Image from...
                 var bitmap = new System.Windows.Media.Imaging.BitmapImage();
                 bitmap.BeginInit();
                 MemoryStream memoryStream = new MemoryStream();
                 // Save to a memory stream...
-                _favicon.Save(memoryStream, ImageFormat.Png);
+                Favicon.Save(memoryStream, ImageFormat.Png);
                 // Rewind the stream...
                 memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
                 bitmap.StreamSource = memoryStream;
@@ -304,77 +299,52 @@ namespace WebMatcher
             }
         }
 
-        private string _complement;
-        public String Complement
+        public string Complement
         {
-            get { return _complement; }
-            private set { SetProperty(ref _complement, value); }
+            get { return GetOrLoad<string>(); }
+            private set { SetAndSave(value); }
         }
 
 
-        public Boolean IsNew => Key == null;
+        public bool IsNew => RegistryKey == null;
 
-        public bool Notify { get; private set; } = false;
+        private readonly bool _trayNotification = false;
 
         public bool ChangedState
         {
-            get { return _changedState; }
-            private set
-            {
-                if (SetProperty(ref _changedState, value))
-                {
-                    if (Notify)
-                    {
-                        SaveString("Changed", ChangedState ? "True" : "False");
-                        Group.OnNotify(this);
-                    }
-                }
-            }
+            get { return GetOrLoad<bool>(); }
+            private set  { SetAndSave(value); }
         }
 
-        private DateTime _lastCheck = DateTime.MinValue;
+        [DependsOn(nameof(ChangedState))]
+        private void UpdateChangedState()
+        {
+                if (!_trayNotification) return;
+                Group.OnNotify(this);           
+        }
 
         public DateTime LastChecked
         {
-            get { return _lastCheck; }
-            set
-            {
-                if (SetProperty(ref _lastCheck, value))
-                {
-                    SaveString("LastChecked", LastChecked.ToString("dd/MM/yyyy"));
-                }
-            }
+            get { return GetOrLoad<DateTime>(); }
+            set { SetAndSave(value); }
         }
 
-        private DateTime _lastChanged = DateTime.MinValue;
         public DateTime LastChanged
         {
-            get { return _lastChanged; }
-            set
-            {
-                if (SetProperty(ref _lastChanged, value))
-                {
-                    SaveString("LastChanged", LastChanged.ToString("dd/MM/yyyy"));
-                }
-            }
-        }
-        public State Status
-        {
-            get { return _status; }
-            set
-            {
-                if (SetProperty(ref _status, value))
-                {
-                    SaveString("Status", Status.ToString());
-                }
-            }
+            get { return GetOrLoad<DateTime>(); }
+            set { SetAndSave(value); }
         }
 
-        private State _runningStatus;
+        public State Status
+        {
+            get { return GetOrLoad<State>(); }
+            set { SetAndSave(value); }
+        }
+
         public State RunningStatus
         {
-            get { return _runningStatus; }
-            private set { SetProperty(ref _runningStatus, value); }
+            get { return GetProperty<State>(); }
+            private set { SetProperty(value); }
         }
 
         [DependsOn("Status", "IsRunning")]
@@ -386,6 +356,7 @@ namespace WebMatcher
         public Matcher(Matchers parent, string key = null)
         {
             Parent = parent;
+            ParentNotifier = parent;
 
             if (key == null)
             {
@@ -399,99 +370,56 @@ namespace WebMatcher
                 Load(key);
             }
             Watch(Parent, "Parent");
-            Notify = true;
+            _trayNotification = true;
         }
 
 
-        public String LoadString(RegistryKey k, String key, String defValue = "")
-        {
-            if (k != null)
-            {
-                String s = k.GetValue(key, defValue).ToString();
-                if (String.IsNullOrEmpty(s)) return null;
-                return s;
-            }
-            return null;
-        }
 
-        public void SaveString(string key, string value)
-        {
-            using (RegistryKey k = GetRegistryKey(true))
-            {
-                SaveString(k, key, value);
-            }
-        }
-        public static void SaveString(RegistryKey registryKey, string key, string value)
-        {
-            if (string.IsNullOrEmpty(value))
-            {
-                if (registryKey.GetSubKeyNames().Contains(key))
-                    registryKey.DeleteValue(key);
-            }
-            else
-                registryKey.SetValue(key, value, RegistryValueKind.String);
-        }
 
-        [DependsOn("Group")]
         public string GroupName
         {
-            get { return Group != null ? Group.Name : ""; }
-            set { Group = Parent?.GetGroup(value); }
+            get { return GetProperty<string>(); }
+            set { SetAndSaveLater(value); }
         }
 
-        [DependsOn("Model")]
+        [DependsOn(nameof(GroupName))]
+        void UpdateGroupName()
+        {
+            Group = Parent?.GetGroup(GroupName);
+        }
+
+
         public string ModelName
         {
-            get { return (Model!=null)? Model.Name : ""; }
-            set
-            {
-                var m = Parent?.GetModel(value);
-                if (m?.Count == 0) m.Expression = Expression;
-                Model = m;
-            }
+            get { return GetProperty<string>(); }
+            set { SetAndSaveLater(value); }
+        }
+
+        [DependsOn(nameof(ModelName))]
+        void UpdateModelName()
+        {
+            var m = Parent?.GetModel(ModelName);
+            if (m?.Count == 0) m.Expression = Expression;
+            Model = m;
         }
 
         public Matchers Parent { get; }
 
         public void Load(string key = null)
         {
-            if (key != null) Key = key;
-            if (Key == null) return;
+            if (key != null) RegistryKey = key;
+            if (RegistryKey == null) return;
 
-            using (RegistryKey rk = Matchers.GetRootKey())
-            {
-                using (RegistryKey k = rk.OpenSubKey(Key))
-                {
-                    if (k != null)
-                    {
-                        Name = LoadString(k, "Name");
-                        GroupName = LoadString(k, "Group");
-                        StringUrl = LoadString(k, "URL", "http://");
-                        ModelName = LoadString(k, "Model", "");
-                        Expression = LoadString(k, "Expression");
-                        Post = LoadString(k, "Post");
-                        Referer = LoadString(k, "Referer");
-                        ParseDom = LoadString(k, "ParseDom", "False") == "True";
-                        Value = LoadString(k, "Value");
-                        try
-                        {
-                            Status = (State)Enum.Parse(typeof(State), LoadString(k, "Status", "NotChecked"));
-                        }
-                        catch (FormatException) { Status = State.NotChecked; }
-
-                        ChangedState = LoadString(k, "Changed", "False") == "True";
-
-                        LastChecked = DateTime.ParseExact(LoadString(k, "LastCheck", "01/01/0001"), "dd/MM/yyyy", null);
-                        LastChanged = DateTime.ParseExact(LoadString(k, "LastChanged", "01/01/0001"), "dd/MM/yyyy", null);
-                    }
-                }
-            }
+            LoadProperty<string>(nameof(Name));
+            LoadProperty<string>(nameof(GroupName));
+            LoadProperty<string>(nameof(ModelName));
+            LoadProperty<string>(nameof(StringUrl));
         }
 
 
-        static string GetNewKey()
+        string GetNewKey()
         {
-            using (RegistryKey k = Matchers.GetRootKey())
+            using (RegistryKey k = Parent.GetRegistryKey())
             {
                 string[] keys = k.GetSubKeyNames();
                 int i = 1;
@@ -501,57 +429,32 @@ namespace WebMatcher
         }
 
 
-        public RegistryKey GetRegistryKey(bool create = false)
-        {
-            using (RegistryKey rk = Matchers.GetRootKey())
-            {
-                if (create)
-                    return rk.CreateSubKey(Key);
-                else
-                    return rk.OpenSubKey(Key);
-            }
-        }
 
         public
         bool Save(bool saveIfNew = false)
         {
             if (Expanded) return false;
 
-            if (Key == null)
+            if (RegistryKey == null)
             {
                 if (saveIfNew)
-                    Key = GetNewKey();
+                    RegistryKey = GetNewKey();
                 else return false;
             }
 
-            using (RegistryKey rk = Matchers.GetRootKey())
-            {
-                using (RegistryKey k = rk.CreateSubKey(Key))
-                {
-                    SaveString(k, "Name", Name);
-                    SaveString(k, "Group", GroupName);
-                    if (!string.IsNullOrEmpty(Url?.AbsoluteUri))
-                        SaveString(k, "URL", Url.AbsoluteUri);
-
-                    SaveString(k, "Model", ModelName);
-                    SaveString(k, "Expression", Expression);
-                    SaveString(k, "Post", Post);
-                    SaveString(k, "Referer", Referer);
-                    SaveString(k, "ParseDom", ParseDom ? "True" : "False");
-                }
-            }
+            SaveAllProperties();
 
             return true;
         }
 
         public void Delete()
         {
-            using (RegistryKey k = Matchers.GetRootKey())
+            using (RegistryKey k = Parent.GetRegistryKey())
             {
-                if (k != null && !string.IsNullOrEmpty(Key))
+                if (k != null && !string.IsNullOrEmpty(RegistryKey))
                 {
-                    k.DeleteSubKeyTree(Key);
-                    Key = null;
+                    k.DeleteSubKeyTree(RegistryKey);
+                    RegistryKey = null;
                 }
             }
 
@@ -561,12 +464,11 @@ namespace WebMatcher
 
         public void Open()
         {
-            if (Url != null)
-            {
-                ChangedState = false;
-                System.Diagnostics.Process.Start(Url.AbsoluteUri);
-                Save();
-            }
+            if (Url == null) return;
+
+            ChangedState = false;
+            System.Diagnostics.Process.Start(Url.AbsoluteUri);
+            Save();
         }
 
         public static void SetHeader(WebRequest request, string header, string value)
@@ -664,19 +566,19 @@ namespace WebMatcher
                     HttpWebResponse response = (HttpWebResponse)request.GetResponse();
                     using (Stream s = response.GetResponseStream())
                     {
-                        if (s!=null)
-                        try
-                        {
-                            Favicon = Image.FromStream(s);
-                        }
-                        catch (ArgumentException)
-                        {
-                            // todo: Bad image format
-                        }
-                        catch (IOException)
-                        {
-                            // todo: server exeption
-                        }
+                        if (s != null)
+                            try
+                            {
+                                Favicon = Image.FromStream(s);
+                            }
+                            catch (ArgumentException)
+                            {
+                                // todo: Bad image format
+                            }
+                            catch (IOException)
+                            {
+                                // todo: server exeption
+                            }
                     }
                     response.Close();
                 }
@@ -864,7 +766,7 @@ namespace WebMatcher
                             }
                             return value;
                         }
-                         Status = State.NotFound;
+                        Status = State.NotFound;
                     }
                     catch (RegexMatchTimeoutException ex)
                     {
@@ -886,21 +788,22 @@ namespace WebMatcher
 
         public void Check(Object threadContext)
         {
-            if (Checking.GetToken())
-            {
-                IsRunning = true;
-                LastChecked = DateTime.Now;
+            if (IsNew) return;
 
-                GetHtml();
+            if (!Checking.GetToken()) return;
 
-                Save();
+            IsRunning = true;
+            LastChecked = DateTime.Now;
 
-                if (Favicon == null) GetFavicon();
+            GetHtml();
 
-                IsRunning = false;
-                Queued.SetToken();
-                Checking.SetToken();
-            }
+            Save();
+
+            if (Favicon == null) GetFavicon();
+
+            IsRunning = false;
+            Queued.SetToken();
+            Checking.SetToken();
         }
 
         public Matcher Clone()
@@ -916,11 +819,10 @@ namespace WebMatcher
             };
         }
 
-        private bool _visible = true;
         public bool Visible
         {
-            get { return _visible; }
-            //private set { SetProperty(ref _visible, value); }
+            get { return true; /*return GetProperty<bool>();*/ }
+            //private set { SetProperty(value); }
         }
 
         [DependsOn("Parent.ViewAll", "IsNew", "ChangedState")]
@@ -929,14 +831,10 @@ namespace WebMatcher
             //Visible = (Parent.ViewAll ?? false) || IsNew || ChangedState;
         }
 
-        private bool _expanded = false;
-        private string _key;
-        private bool _isRunning;
-
         public bool Expanded
         {
-            get { return _expanded; }
-            set { SetProperty(ref _expanded, value); }
+            get { return GetProperty<bool>(); }
+            set { SetProperty(value); }
         }
 
         [DependsOn("RunningStatus")]

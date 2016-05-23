@@ -24,8 +24,8 @@ namespace WebMatcher
 
         ~MatchersGroup()
         {
-            UnWatch(Parent);
-            UnWatch(Matchers);
+            UnWatch(Parent, "Parent");
+            UnWatch(Matchers, "Matchers");
 
             Parent?.Groups.Remove(this);
         }
@@ -40,11 +40,10 @@ namespace WebMatcher
         }
 
 
-        private bool _expanded;
         public bool Expanded
         {
-            get { return _expanded; }
-            set { SetProperty(ref _expanded, value); }
+            get { return GetProperty<bool>(); }
+            set { SetProperty(value); }
         }
 
         [DependsOn("Matchers.Expanded", "Matchers.ChangedState")]
@@ -56,12 +55,11 @@ namespace WebMatcher
             }
         }
 
-        private bool _visible = true;
         public bool Visible
         {
-            get { return _visible; }
+            get { return GetProperty<bool>(); }
 
-            private set { SetProperty(ref _visible, value); }
+            private set { SetProperty(value); }
         }
 
         [DependsOn("Matchers.Visible")]
@@ -70,13 +68,10 @@ namespace WebMatcher
             Visible = Matchers.Any(m => m.Visible);
         }
 
-        private bool _changedState = false;
-        private int _count;
-
         public bool ChangedState
         {
-            get { return _changedState; }
-            private set { SetProperty(ref _changedState, value); }
+            get { return GetProperty<bool>(); }
+            private set { SetProperty(value); }
         }
 
         [DependsOn("Matchers.ChangedState")]
@@ -88,16 +83,15 @@ namespace WebMatcher
 
         public DateTime CheckMatchers()
         {
-            Matcher m;
-            int i = 0;
+            var i = 0;
 
-            DateTime minDue = DateTime.MaxValue;
+            var minDue = DateTime.MaxValue;
 
             while (i<Matchers.Count)
             {
-                m = Matchers[i];
+                var m = Matchers[i];
 
-                DateTime due = m.LastChecked + Parent.Interval;
+                var due = m.LastChecked + Parent.Interval;
 
                 if (due<DateTime.Now)
                 {
@@ -120,8 +114,8 @@ namespace WebMatcher
 
         public int Count
         {
-            get { return _count; }
-            private set { SetProperty(ref _count, value); }
+            get { return GetProperty<int>(); }
+            private set { SetProperty(value); }
         }
 
 
@@ -132,11 +126,10 @@ namespace WebMatcher
             if (Count == 0) Parent?.Groups.Remove(this);
         }
 
-       private int _checkedCount;
         public int CheckedCount
         {
-            get { return _checkedCount; }
-            set { SetProperty(ref _checkedCount, value); }
+            get { return GetProperty<int>(); }
+            set { SetProperty(value); }
         }
 
         [DependsOn("Matchers", "Matchers.Status")]
